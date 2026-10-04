@@ -1,0 +1,7 @@
+node_modules/
+.vercel/
+*.log
+*.tmp
+*.gdoc
+.DS_Store
+Thumbs.db

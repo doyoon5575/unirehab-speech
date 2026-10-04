@@ -1,0 +1,748 @@
+/* ==========================================================================
+   유니원 리햅 (UniRehab v2.0) - Clinical Light 테마 시스템 (Vanilla CSS)
+   - 밝고 신뢰감 있는 의료/임상 헬스케어 팔레트 (Off-white + Deep Teal + Sage Mint)
+   - 접근성: 글자 크기 3단계(text-md, text-lg, text-xl) 및 고대비(high-contrast) 완벽 지원
+   ========================================================================== */
+
+:root {
+  /* [Clinical Light 테마 색상] */
+  --bg-app: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-subtle: #F1F5F9;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F8FAFC;
+
+  /* 경계선 */
+  --border-light: #E2E8F0;
+  --border-medium: #CBD5E1;
+  --border-focus: #0284C7;
+
+  /* 텍스트 색상 */
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --text-inverse: #FFFFFF;
+
+  /* 브랜드 & 임상 상태 색상 */
+  --brand-primary: #0B6E99;       /* 딥 틸블루 (전문 임상 톤) */
+  --brand-primary-hover: #085577;
+  --brand-primary-light: #E0F2FE;
+  
+  --brand-success: #10B981;       /* 세이지 민트 (정답 및 긍정 피드백) */
+  --brand-success-light: #ECFDF5;
+  --brand-success-border: #A7F3D0;
+
+  --brand-warning: #D97706;       /* 앰버 오렌지 (단서 및 주의) */
+  --brand-warning-light: #FFFBEB;
+  --brand-warning-border: #FDE68A;
+
+  --brand-danger: #EF4444;        /* 오류 및 하락 경고 */
+  --brand-danger-light: #FEF2F2;
+  --brand-danger-border: #FECACA;
+
+  --brand-purple: #6366F1;
+  --brand-purple-light: #EEF2FF;
+
+  /* 그림자 & 모서리 */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 2px 8px -2px rgba(15, 23, 42, 0.06), 0 1px 4px -1px rgba(15, 23, 42, 0.04);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* 트랜지션 */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* 폰트 크기 기본 (text-md) */
+  --font-xs: 0.75rem;
+  --font-sm: 0.875rem;
+  --font-base: 1rem;
+  --font-lg: 1.125rem;
+  --font-xl: 1.25rem;
+  --font-2xl: 1.5rem;
+  --font-3xl: 1.875rem;
+  --font-prompt: 2.2rem;
+}
+
+/* 폰트 크기 조절 옵션 */
+html.text-md {
+  font-size: 16px;
+  --font-prompt: 2.2rem;
+}
+html.text-lg {
+  font-size: 18px;
+  --font-prompt: 2.6rem;
+}
+html.text-xl {
+  font-size: 20px;
+  --font-prompt: 3.0rem;
+}
+
+/* 고대비 모드 (High Contrast Mode) */
+body.high-contrast {
+  --bg-app: #000000;
+  --bg-surface: #111111;
+  --bg-subtle: #1F2937;
+  --bg-card: #18181B;
+  --bg-card-hover: #27272A;
+
+  --border-light: #FBBF24;
+  --border-medium: #FDE047;
+  --border-focus: #38BDF8;
+
+  --text-primary: #FFFFFF;
+  --text-secondary: #FDE047;
+  --text-muted: #E2E8F0;
+  --text-inverse: #000000;
+
+  --brand-primary: #38BDF8;
+  --brand-primary-light: #082F49;
+  --brand-success: #4ADE80;
+  --brand-success-light: #052E16;
+  --brand-warning: #FDE047;
+  --brand-warning-light: #451A03;
+  --brand-danger: #F87171;
+  --brand-danger-light: #450A0A;
+}
+
+/* ==========================================================================
+   기본 리셋 & 레이아웃
+   ========================================================================== */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================================================
+   타이포그래피 및 아이콘 유틸
+   ========================================================================== */
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.ico {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.icon-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  background: var(--brand-primary-light);
+  color: var(--brand-primary);
+}
+
+/* ==========================================================================
+   헤더 (Header)
+   ========================================================================== */
+
+.app-header {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.brand-logo-area {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.logo-badge {
+  background: linear-gradient(135deg, var(--brand-primary), #0284C7);
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(11, 110, 153, 0.3);
+}
+
+.brand-text h1 {
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+}
+
+.brand-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* 환자 간편 선택 뱃지 */
+.patient-badge-card {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.patient-badge-card:hover {
+  background: var(--brand-primary-light);
+  border-color: var(--brand-primary);
+}
+
+/* 탭 내비게이션 */
+.nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--bg-subtle);
+  padding: 0.25rem;
+  border-radius: var(--radius-md);
+}
+
+.nav-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.nav-tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.nav-tab-btn.active {
+  background: var(--bg-surface);
+  color: var(--brand-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ==========================================================================
+   버튼 시스템
+   ========================================================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--brand-primary);
+  color: var(--text-inverse);
+  box-shadow: 0 1px 3px rgba(11, 110, 153, 0.25);
+}
+.btn-primary:hover {
+  background: var(--brand-primary-hover);
+  box-shadow: 0 3px 6px rgba(11, 110, 153, 0.3);
+}
+
+.btn-secondary {
+  background: var(--bg-surface);
+  border-color: var(--border-medium);
+  color: var(--text-primary);
+}
+.btn-secondary:hover {
+  background: var(--bg-subtle);
+  border-color: var(--text-muted);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.btn-ghost:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.btn-success {
+  background: var(--brand-success);
+  color: white;
+}
+.btn-success:hover {
+  background: #059669;
+}
+
+.btn-danger {
+  background: var(--brand-danger);
+  color: white;
+}
+.btn-danger:hover {
+  background: #DC2626;
+}
+
+.btn-icon {
+  padding: 0.45rem;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-fast);
+}
+.btn-icon:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.btn-large {
+  padding: 0.9rem 1.8rem;
+  font-size: 1.15rem;
+  border-radius: var(--radius-lg);
+}
+
+/* ==========================================================================
+   카드 & 패널
+   ========================================================================== */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+  transition: var(--transition-fast);
+}
+
+.card-hover:hover {
+  border-color: var(--border-medium);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* KPI 카드 그리드 */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.kpi-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.kpi-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kpi-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  line-height: 1.1;
+}
+
+.kpi-sub {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   훈련 화면 (Patient View)
+   ========================================================================== */
+
+.training-container {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.patient-training-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 2.2rem;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.5rem;
+}
+
+/* 상단 프로그레스 바 */
+.training-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.training-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand-primary), var(--brand-success));
+  border-radius: var(--radius-full);
+  transition: width 0.4s ease;
+}
+
+/* 시각 자극 박스 */
+.stimulus-visual-box {
+  width: 160px;
+  height: 160px;
+  border-radius: var(--radius-xl);
+  background: var(--bg-subtle);
+  border: 2px dashed var(--border-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 5rem;
+  box-shadow: var(--shadow-sm);
+  user-select: none;
+}
+
+.stimulus-prompt-text {
+  font-size: var(--font-prompt);
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.35;
+  margin-bottom: 0.5rem;
+  word-break: keep-all;
+}
+
+/* 마이크 및 파형 영역 */
+.mic-action-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.mic-btn-circle {
+  width: 88px;
+  height: 88px;
+  border-radius: var(--radius-full);
+  background: var(--brand-primary);
+  color: white;
+  border: 4px solid var(--brand-primary-light);
+  box-shadow: 0 4px 14px rgba(11, 110, 153, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.mic-btn-circle:hover {
+  transform: scale(1.06);
+  background: var(--brand-primary-hover);
+}
+
+.mic-btn-circle.recording {
+  background: var(--brand-danger);
+  border-color: var(--brand-danger-light);
+  box-shadow: 0 0 24px rgba(239, 68, 68, 0.6);
+  animation: pulse-ring 1.5s infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.98); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+  70% { transform: scale(1.04); box-shadow: 0 0 0 16px rgba(239, 68, 68, 0); }
+  100% { transform: scale(0.98); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.audio-visualizer-canvas {
+  width: 240px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: transparent;
+}
+
+/* 단서 위계 바 (Cue Bar) */
+.cue-hierarchy-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.cue-step-chip {
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
+}
+
+.cue-step-chip.active {
+  background: var(--brand-warning-light);
+  border-color: var(--brand-warning);
+  color: var(--brand-warning);
+}
+
+/* 피드백 배너 */
+.feedback-banner {
+  width: 100%;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  text-align: left;
+  animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.feedback-banner.correct {
+  background: var(--brand-success-light);
+  border: 1.5px solid var(--brand-success-border);
+  color: #065F46;
+}
+
+.feedback-banner.partial {
+  background: #F0F9FF;
+  border: 1.5px solid #BAE6FD;
+  color: #075985;
+}
+
+.feedback-banner.incorrect {
+  background: var(--brand-danger-light);
+  border: 1.5px solid var(--brand-danger-border);
+  color: #991B1B;
+}
+
+/* 보기 선택 버튼 */
+.option-btn-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 540px;
+}
+
+.option-select-btn {
+  padding: 1rem 1.2rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--border-medium);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.option-select-btn:hover {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary-light);
+  color: var(--brand-primary);
+}
+
+/* ==========================================================================
+   토스트 & 모달
+   ========================================================================== */
+
+#toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  background: var(--text-primary);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  transform: translateY(20px);
+  opacity: 0;
+  transition: all 0.25s ease;
+}
+
+.toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.modal-overlay.show {
+  opacity: 1;
+}
+
+.modal {
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+}
+
+.modal-head {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+
+.modal-foot {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background: var(--bg-subtle);
+}
+
+/* ==========================================================================
+   반응형 모바일 미디어 쿼리
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .header-inner {
+    padding: 0.6rem 1rem;
+    flex-wrap: wrap;
+  }
+  .nav-tabs {
+    order: 3;
+    width: 100%;
+    justify-content: space-around;
+  }
+  .patient-training-card {
+    padding: 1.5rem 1rem;
+  }
+  .stimulus-visual-box {
+    width: 120px;
+    height: 120px;
+    font-size: 3.8rem;
+  }
+  .stimulus-prompt-text {
+    font-size: 1.6rem;
+  }
+  .option-btn-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "unirehab-speech",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "성인 언어재활 솔루션 - 유니원 리햅 (UniRehab Speech)",
+  "scripts": {
+    "start": "node server.js",
+    "serve": "node server.js"
+  }
+}

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko" class="text-md">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>유니원 리햅 (UniRehab Pro) | Agentic AI 성인 언어재활 솔루션</title>
+  <meta name="description" content="성인 뇌신경계 언어장애 환자의 체계적 회복과 언어재활사를 위한 7대 에이전틱 임상 지원 솔루션">
+  
+  <!-- PWA & Mobile Meta Tags -->
+  <meta name="theme-color" content="#0B6E99">
+  <link rel="manifest" href="./manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="유니원리햅">
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230B6E99'/><path d='M30 45 Q50 20 70 45 Q50 70 30 45 Z' fill='white'/><circle cx='50' cy='45' r='10' fill='%230B6E99'/><path d='M25 75 Q50 65 75 75' stroke='white' stroke-width='6' stroke-linecap='round' fill='none'/></svg>">
+
+  <!-- Web Fonts: Pretendard & Outfit -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- External Libraries (Chart.js & Canvas-Confetti) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+
+  <!-- Application Clinical Light Stylesheet -->
+  <link rel="stylesheet" href="./index.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Dynamic Header -->
+    <header id="main-header"></header>
+
+    <!-- Main Dynamic Content Container -->
+    <main id="main-content" style="flex: 1; width: 100%; max-width: 1400px; margin: 0 auto; padding: 1.5rem;"></main>
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Modals Container -->
+    <div id="modal-container"></div>
+  </div>
+
+  <!-- Main JavaScript Application Module -->
+  <script type="module" src="./src/main.js"></script>
+
+  <!-- Register Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => {
+          console.log('SW registration note:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
