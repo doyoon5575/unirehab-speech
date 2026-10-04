@@ -1,0 +1,6 @@
+*.gdoc
+*.bat
+.git
+.vercel
+node_modules
+*.log
