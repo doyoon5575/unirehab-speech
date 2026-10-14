@@ -1,64 +1,34 @@
-const CACHE_NAME = 'unirehab-cache-v2.2';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/index.css',
-  '/manifest.json',
-  '/src/main.js',
-  '/src/store.js',
-  '/src/utils/icons.js',
-  '/src/utils/helpers.js',
-  '/src/data/taskBank.js',
-  '/src/agents/taskAgent.js',
-  '/src/agents/cueAgent.js',
-  '/src/agents/evalAgent.js',
-  '/src/agents/adaptiveAgent.js',
-  '/src/agents/speechAgent.js',
-  '/src/agents/reportAgent.js',
-  '/src/agents/insightAgent.js',
-  '/src/agents/sessionOrchestrator.js',
-  '/src/components/Header.js',
-  '/src/components/ClinicianView.js',
-  '/src/components/PatientView.js',
-  '/src/components/ReportView.js',
-  '/src/components/SettingsModal.js',
-  '/src/components/ExternalAccessModal.js'
-];
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE).catch((err) => {
-        console.warn('PWA Asset caching warning:', err);
-      });
-    })
-  );
-  self.skipWaiting();
+const CACHE_NAME = 'unirehab-public-v3';
+// Never cache authentication, API traffic, reports, or patient records.
+function isPublicAsset(request) {
+  const url = new URL(request.url);
+  if (request.method !== 'GET' || url.origin !== self.location.origin || url.search) return false;
+  return ['/', '/index.html', '/index.css', '/manifest.json'].includes(url.pathname)
+    || /^\/src\/[a-zA-Z0-9_/-]+\.js$/.test(url.pathname)
+    || /^\/audio\/[a-zA-Z0-9_-]+\.mp3$/.test(url.pathname);
+}
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(['/', '/index.html', '/index.css', '/manifest.json'])));
 });
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      );
-    })
-  );
-  self.clients.claim();
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(key => key.startsWith('unirehab-') && key !== CACHE_NAME).map(key => caches.delete(key)));
+    await self.clients.claim();
+  })());
 });
-
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response && response.status === 200 && event.request.method === 'GET') {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-        }
-        return response;
-      })
-      .catch(() => caches.match(event.request))
-  );
+self.addEventListener('fetch', event => {
+  if (!isPublicAsset(event.request)) return;
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    try {
+      const response = await fetch(event.request);
+      if (response.ok && response.type === 'basic' && !/no-store|private/i.test(response.headers.get('Cache-Control') || '')) {
+        await cache.put(event.request, response.clone());
+      }
+      return response;
+    } catch {
+      return (await cache.match(event.request)) || new Response('오프라인에서 사용할 수 없는 자료입니다.', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    }
+  })());
 });
