@@ -16,13 +16,13 @@ const TRAILING = ['이에요', '이예요', '입니다', '예요', '에요', '�
 const NO_RESPONSE_RE = /^(모르|몰라|모름|글쎄|음+|어+|아+|잘모르|기억이안|생각이안|패스)/;
 
 export const ERROR_TYPES = {
-  NONE:           { key: 'NONE',           label: '오류 없음',   color: '#2F9E77' },
-  PARTIAL:        { key: 'PARTIAL',        label: '부분 산출',   color: '#0B6E99' },
-  PHONEMIC:       { key: 'PHONEMIC',       label: '음소 착어',   color: '#6C5DD3' },
-  SEMANTIC:       { key: 'SEMANTIC',       label: '의미 착어',   color: '#D98B12' },
-  CIRCUMLOCUTION: { key: 'CIRCUMLOCUTION', label: '우회 표현',   color: '#0EA5A4' },
-  NO_RESPONSE:    { key: 'NO_RESPONSE',    label: '무반응',      color: '#8592A6' },
-  UNRELATED:      { key: 'UNRELATED',      label: '무관련 반응', color: '#D14343' }
+  NONE:           { key: 'NONE',           label: '오류 없음',   desc: '정상 산출',   color: '#2F9E77' },
+  PARTIAL:        { key: 'PARTIAL',        label: '부분 산출',   desc: '일부 음절 산출', color: '#0B6E99' },
+  PHONEMIC:       { key: 'PHONEMIC',       label: '음소 착어',   desc: '소리/발음 왜곡', color: '#6C5DD3' },
+  SEMANTIC:       { key: 'SEMANTIC',       label: '의미 착어',   desc: '유사 범주 혼동', color: '#D98B12' },
+  CIRCUMLOCUTION: { key: 'CIRCUMLOCUTION', label: '우회 표현',   desc: '단어 대신 설명', color: '#0EA5A4' },
+  NO_RESPONSE:    { key: 'NO_RESPONSE',    label: '무반응',      desc: '응답 없음/지연', color: '#8592A6' },
+  UNRELATED:      { key: 'UNRELATED',      label: '무관련 반응', desc: '과제 무관 발화', color: '#D14343' }
 };
 
 export class EvalAgent {
@@ -156,18 +156,37 @@ export class EvalAgent {
     const list = (Array.isArray(alternatives) ? alternatives : [alternatives]).filter(a => a != null);
     if (!list.length) list.push('');
 
-    // 보기 선택 시 단서 수준을 최소 '보기 선택'으로 보정
-    const effectiveCue = mode === 'choice' ? Math.max(cueLevel, 5) : cueLevel;
+    // 보기 선택 및 치료사 직접 채점 모드 단서 수준 보정
+    let effectiveCue = cueLevel;
+    if (mode === 'choice') {
+      effectiveCue = Math.max(cueLevel, 5);
+    } else if (mode === 'clinician_spontaneous') {
+      effectiveCue = 0;
+    } else if (mode === 'clinician_cued') {
+      effectiveCue = Math.max(1, cueLevel);
+    }
 
     let best = null;
     let bestRaw = list[0];
-    list.forEach(raw => {
-      const r = this.analyzeOne(raw, task);
-      if (!best || r.rank > best.rank || (r.rank === best.rank && r.similarity > best.similarity)) {
-        best = r;
-        bestRaw = raw;
-      }
-    });
+
+    if (mode === 'clinician_spontaneous' || mode === 'clinician_cued') {
+      best = { status: 'CORRECT', errorType: 'NONE', similarity: 1, rank: 5 };
+      bestRaw = task.targetWord;
+    } else if (mode === 'clinician_partial') {
+      best = { status: 'PARTIAL', errorType: 'PARTIAL', similarity: 0.75, rank: 3 };
+      bestRaw = task.targetWord ? `${task.targetWord} (부분 산출)` : '부분 산출';
+    } else if (mode === 'clinician_incorrect') {
+      best = { status: 'INCORRECT', errorType: 'NO_RESPONSE', similarity: 0, rank: 0 };
+      bestRaw = '(오답 / 무반응)';
+    } else {
+      list.forEach(raw => {
+        const r = this.analyzeOne(raw, task);
+        if (!best || r.rank > best.rank || (r.rank === best.rank && r.similarity > best.similarity)) {
+          best = r;
+          bestRaw = raw;
+        }
+      });
+    }
 
     const isCorrect = best.status !== 'INCORRECT';
     const score = cueAgent.scoreFor(effectiveCue, best.status);

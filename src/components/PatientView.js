@@ -10,15 +10,19 @@ import { sessionOrchestrator } from '../agents/sessionOrchestrator.js';
 import { speechAgent } from '../agents/speechAgent.js';
 import { cueAgent, CUE_HIERARCHY } from '../agents/cueAgent.js';
 import { icon } from '../utils/icons.js';
-import { esc, sec } from '../utils/helpers.js';
+import { esc, sec, levelName } from '../utils/helpers.js';
+
+// 뷰 재진입 시 이전 구독 해제를 위한 모듈 단위 핸들
+let activeUnsubscribe = null;
 
 export function renderPatientView(container, sessionConfig, onFinishToReport) {
   const orch = sessionOrchestrator;
-  
-  // 세션 시작
-  orch.startSession(null, sessionConfig || {});
 
-  // 오케스트레이터 구독 해제 함수 보관
+  // 이전 진입에서 남은 구독 해제 (중복 렌더·중복 TTS 방지)
+  if (activeUnsubscribe) activeUnsubscribe();
+  speechAgent.stopListening();
+  speechAgent.cancelSpeech();
+
   let unsubscribe = null;
 
   function renderTaskScreen(data) {
@@ -37,7 +41,7 @@ export function renderPatientView(container, sessionConfig, onFinishToReport) {
                   문제 ${index + 1} / ${total}
                 </span>
                 <span style="background: var(--bg-subtle); color: var(--text-secondary); border: 1px solid var(--border-light); padding: 0.25rem 0.7rem; border-radius: var(--radius-full); font-size: 0.85rem; font-weight: 600;">
-                  난이도: ${currentLevel}
+                  난이도: ${levelName(currentLevel)}
                 </span>
               </div>
               <span style="font-weight: 800; color: var(--brand-primary); font-size: 1rem;">
@@ -57,32 +61,66 @@ export function renderPatientView(container, sessionConfig, onFinishToReport) {
 
           <!-- 문제 안내 텍스트 및 발음 듣기 버튼 -->
           <div style="max-width: 680px; width: 100%;">
-            <h2 class="stimulus-prompt-text">
-              ${task.question.replace(/\n/g, '<br>')}
+            ${task.domain === 'auditory' ? `
+              <div id="auditory-hidden-note" style="font-size: 1.15rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.6rem;">
+                🎧 잘 듣고 답해 주세요. (청각 이해 과제는 글자가 가려져 있습니다)
+              </div>` : ''}
+            <h2 class="stimulus-prompt-text" id="prompt-text" style="${task.domain === 'auditory' ? 'display:none;' : ''}">
+              ${esc(task.question).replace(/\n/g, '<br>')}
             </h2>
             <button class="btn btn-secondary" id="btn-read-prompt" style="padding: 0.5rem 1.1rem; font-size: 0.9rem; margin-top: 0.3rem;">
               ${icon('volume', 18)}
               <span>문제 다시 듣기</span>
             </button>
+            ${task.domain === 'auditory' ? `
+              <button class="btn btn-ghost" id="btn-reveal-text" style="padding: 0.5rem 1.1rem; font-size: 0.9rem; margin-top: 0.3rem;">
+                ${icon('type', 18)}<span>글자로 보기</span>
+              </button>` : ''}
           </div>
 
-          <!-- 마이크 음성 인식 및 음파 시각화 액션 영역 -->
-          <div class="mic-action-area">
-            <canvas id="audio-wave-canvas" class="audio-visualizer-canvas" width="240" height="40"></canvas>
-
-            <button class="mic-btn-circle" id="btn-mic-toggle" title="마이크 누르고 말씀하세요" aria-label="마이크 음성 입력">
-              ${icon('mic', 38, 2.5)}
-            </button>
-
-            <div id="mic-status-label" style="font-size: 1.05rem; font-weight: 700; color: var(--text-secondary); min-height: 1.6rem;">
-              마이크 버튼을 누르고 말씀해 보세요 🎙️
+          <!-- [치료사 / 특수교사용] 태블릿 원클릭 신속 판정 패널 -->
+          <div class="clinician-touch-eval-card" style="width: 100%; max-width: 680px; background: var(--bg-subtle); border: 1.5px solid var(--border-medium); border-radius: var(--radius-lg); padding: 1rem 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 0.4rem; font-weight: 800; color: var(--text-primary); font-size: 0.95rem;">
+                <span class="icon-chip" style="width:24px;height:24px;font-size:0.8rem;">👩‍⚕️</span>
+                <span>치료사·교사 원클릭 판정 (터치 즉시 채점)</span>
+              </div>
+              <div style="font-size: 0.82rem; font-weight: 700; color: var(--brand-primary); background: var(--brand-primary-light); padding: 0.2rem 0.6rem; border-radius: var(--radius-full);">
+                현재 단서: <span id="lbl-active-cue-name">${CUE_HIERARCHY[cueLevel]?.label || '자발 산출'}</span> (<span id="lbl-active-cue-score">${CUE_HIERARCHY[cueLevel]?.score || 100}</span>점)
+              </div>
             </div>
 
-            <!-- 직접 텍스트 입력 보조창 (터치 키보드 환경 지원) -->
-            <div style="display: flex; gap: 0.5rem; width: 100%; max-width: 440px;">
-              <input type="text" id="input-response-text" placeholder="음성인식 결과 또는 직접 입력" style="flex: 1; padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 2px solid var(--border-medium); font-size: 1.1rem; text-align: center; color: var(--text-primary); font-weight: 600;">
-              <button class="btn btn-primary" id="btn-submit-text" style="padding: 0.75rem 1.4rem;">
-                제출
+            <div class="touch-eval-btn-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.6rem;">
+              <button class="btn-touch-eval touch-correct" id="btn-touch-spontaneous" type="button" title="힌트 없이 스스로 성공">
+                <span style="font-size: 1.25rem;">🟢</span>
+                <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                  <strong style="font-size: 0.92rem;">정답 (자발)</strong>
+                  <span style="font-size: 0.75rem; opacity: 0.85;">100점 · 무단서</span>
+                </div>
+              </button>
+
+              <button class="btn-touch-eval touch-cued" id="btn-touch-cued" type="button" title="단서 확인 후 정답 발화">
+                <span style="font-size: 1.25rem;">💡</span>
+                <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                  <strong style="font-size: 0.92rem;">단서 후 정답</strong>
+                  <span style="font-size: 0.75rem; opacity: 0.85;" id="lbl-touch-cued-pts">${cueLevel > 0 ? `${CUE_HIERARCHY[cueLevel]?.score}점 · ${CUE_HIERARCHY[cueLevel]?.short}` : '85점 · 1단계'}</span>
+                </div>
+              </button>
+
+              <button class="btn-touch-eval touch-partial" id="btn-touch-partial" type="button" title="근접 발음 또는 핵심어 산출">
+                <span style="font-size: 1.25rem;">🔵</span>
+                <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                  <strong style="font-size: 0.92rem;">부분 산출</strong>
+                  <span style="font-size: 0.75rem; opacity: 0.85;">70% 인정</span>
+                </div>
+              </button>
+
+              <button class="btn-touch-eval touch-incorrect" id="btn-touch-incorrect" type="button" title="오답 또는 무반응">
+                <span style="font-size: 1.25rem;">🔴</span>
+                <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                  <strong style="font-size: 0.92rem;">오답 / 무반응</strong>
+                  <span style="font-size: 0.75rem; opacity: 0.85;">0점</span>
+                </div>
               </button>
             </div>
           </div>
@@ -101,7 +139,7 @@ export function renderPatientView(container, sessionConfig, onFinishToReport) {
             <!-- 단서 요청 버튼 -->
             <button class="btn btn-secondary" id="btn-request-cue" style="padding: 0.6rem 1.2rem; border-color: var(--brand-warning); color: var(--brand-warning); background: var(--brand-warning-light); font-weight: 700;">
               ${icon('bulb', 18)}
-              <span>단서(힌트) 요청하기 (현재 ${cueLevel}단계)</span>
+              <span>다음 단계 단서(힌트) 제시하기 (현재 ${cueLevel}단계: ${CUE_HIERARCHY[cueLevel]?.short || '자발'})</span>
             </button>
 
             <!-- 단서 안내 박스 (요청 시 표시) -->
@@ -115,6 +153,31 @@ export function renderPatientView(container, sessionConfig, onFinishToReport) {
                   ${esc(opt)}
                 </button>
               `).join('')}
+            </div>
+          </div>
+
+          <!-- 보조: 마이크 음성 인식 및 직접 텍스트 입력 영역 -->
+          <div class="mic-action-area" style="border-top: 1px dashed var(--border-light); padding-top: 1.2rem;">
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-bottom: -0.3rem;">
+              보조 음성인식 (환자 자율 발화용)
+            </div>
+
+            <canvas id="audio-wave-canvas" class="audio-visualizer-canvas" width="240" height="36"></canvas>
+
+            <button class="mic-btn-circle" id="btn-mic-toggle" title="마이크 누르고 말씀하세요" aria-label="마이크 음성 입력" style="width: 72px; height: 72px;">
+              ${icon('mic', 32, 2.5)}
+            </button>
+
+            <div id="mic-status-label" style="font-size: 0.95rem; font-weight: 700; color: var(--text-secondary); min-height: 1.4rem;">
+              마이크 버튼을 누르고 말씀하시거나, 위 빠른 채점 버튼을 누르세요 🎙️
+            </div>
+
+            <!-- 직접 텍스트 입력 보조창 -->
+            <div style="display: flex; gap: 0.5rem; width: 100%; max-width: 440px;">
+              <input type="text" id="input-response-text" placeholder="음성인식 결과 또는 텍스트 입력" style="flex: 1; padding: 0.65rem 0.9rem; border-radius: var(--radius-md); border: 1.5px solid var(--border-medium); font-size: 1rem; text-align: center; color: var(--text-primary); font-weight: 600;">
+              <button class="btn btn-secondary" id="btn-submit-text" style="padding: 0.65rem 1.1rem; font-size: 0.95rem;">
+                입력 제출
+              </button>
             </div>
           </div>
 
@@ -139,10 +202,49 @@ export function renderPatientView(container, sessionConfig, onFinishToReport) {
     const cueBox = container.querySelector('#cue-display-box');
     const choiceBox = container.querySelector('#choice-options-container');
 
+    // 0. 치료사/특수교사 원터치 신속 판정 버튼 바인딩
+    const btnSpontaneous = container.querySelector('#btn-touch-spontaneous');
+    const btnCued = container.querySelector('#btn-touch-cued');
+    const btnPartial = container.querySelector('#btn-touch-partial');
+    const btnIncorrect = container.querySelector('#btn-touch-incorrect');
+
+    if (btnSpontaneous) {
+      btnSpontaneous.onclick = () => {
+        orch.submitAnswer(task.targetWord, 'clinician_spontaneous');
+      };
+    }
+    if (btnCued) {
+      btnCued.onclick = () => {
+        if (orch.currentCueLevel === 0) {
+          orch.currentCueLevel = 1;
+        }
+        orch.submitAnswer(task.targetWord, 'clinician_cued');
+      };
+    }
+    if (btnPartial) {
+      btnPartial.onclick = () => {
+        orch.submitAnswer(task.targetWord, 'clinician_partial');
+      };
+    }
+    if (btnIncorrect) {
+      btnIncorrect.onclick = () => {
+        orch.submitAnswer('', 'clinician_incorrect');
+      };
+    }
+
     // 1. 문제 다시 읽기
     btnReadPrompt.onclick = () => {
-      speechAgent.speak(task.question);
+      speechAgent.speak(task.question, orch.config.speechRate);
     };
+
+    const btnReveal = container.querySelector('#btn-reveal-text');
+    if (btnReveal) {
+      btnReveal.onclick = () => {
+        container.querySelector('#prompt-text').style.display = '';
+        container.querySelector('#auditory-hidden-note')?.remove();
+        btnReveal.remove();
+      };
+    }
 
     // 2. 마이크 토글 (STT)
     btnMic.onclick = () => {
@@ -197,6 +299,14 @@ export function renderPatientView(container, sessionConfig, onFinishToReport) {
           <div style="font-size: 0.85rem; color: #B45309; margin-bottom: 0.2rem;">[${cue.label}]</div>
           <div style="${cue.big ? 'font-size: 1.6rem; letter-spacing: 0.1em; color: var(--text-primary);' : ''}">${esc(cue.text)}</div>
         `;
+        // 단서 상태 라벨 갱신
+        const lblActiveCue = container.querySelector('#lbl-active-cue-name');
+        const lblActiveScore = container.querySelector('#lbl-active-cue-score');
+        const lblTouchPts = container.querySelector('#lbl-touch-cued-pts');
+        if (lblActiveCue) lblActiveCue.textContent = cue.label;
+        if (lblActiveScore) lblActiveScore.textContent = cue.score;
+        if (lblTouchPts) lblTouchPts.textContent = `${cue.score}점 · ${cue.short}`;
+
         if (orch.currentCueLevel >= 5) {
           choiceBox.style.display = 'grid';
         }
@@ -248,7 +358,7 @@ export function renderPatientView(container, sessionConfig, onFinishToReport) {
     }
 
     // TTS 피드백 음성 안내
-    speechAgent.speak(`${evaluation.feedbackTitle}. ${evaluation.feedbackMsg}`);
+    speechAgent.speak(`${evaluation.feedbackTitle}. ${evaluation.feedbackMsg}`, orch.config.speechRate);
 
     bannerBox.querySelector('#btn-next-step').onclick = () => {
       if (isLast) {
@@ -323,11 +433,12 @@ export function renderPatientView(container, sessionConfig, onFinishToReport) {
 
     container.querySelector('#btn-view-report').onclick = () => {
       if (unsubscribe) unsubscribe();
+      activeUnsubscribe = null;
       onFinishToReport();
     };
   }
 
-  // 오케스트레이터 이벤트 리스너 연결
+  // 오케스트레이터 이벤트 리스너 연결 (반드시 세션 시작 전에 구독)
   unsubscribe = orch.subscribe((event, data) => {
     switch (event) {
       case 'TASK_LOADED':
@@ -341,4 +452,8 @@ export function renderPatientView(container, sessionConfig, onFinishToReport) {
         break;
     }
   });
+  activeUnsubscribe = unsubscribe;
+
+  // 세션 시작 (구독 이후 호출해야 첫 문항이 렌더링됨)
+  orch.startSession(null, sessionConfig || {});
 }

@@ -91,9 +91,10 @@ const server = http.createServer((req, res) => {
         return;
       }
 
+      const isDynamic = ext === '.html' || ext === '.js' || ext === '.json' || filePath.endsWith('sw.js');
       res.writeHead(200, {
         'Content-Type': contentType,
-        'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=3600'
+        'Cache-Control': isDynamic ? 'no-cache, no-store, must-revalidate' : 'public, max-age=3600'
       });
       res.end(content);
     });

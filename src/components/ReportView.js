@@ -12,6 +12,10 @@ import { cueAgent, CUE_HIERARCHY } from '../agents/cueAgent.js';
 import { ERROR_TYPES } from '../agents/evalAgent.js';
 import { icon } from '../utils/icons.js';
 import { domainName, levelName, esc, sec, downloadFile, toast } from '../utils/helpers.js';
+import { insightAgent } from '../agents/insightAgent.js';
+
+// 선택된 회기 (대상자별 유지)
+let selectedSessionId = null;
 
 export function renderReportView(container) {
   const patient = store.getActivePatient();
@@ -36,8 +40,10 @@ export function renderReportView(container) {
     return;
   }
 
-  // 최신 세션 기준
-  const latestSession = sessions[sessions.length - 1];
+  // 선택 회기 (기본: 최신)
+  const latestSession = sessions.find(s => s.id === selectedSessionId) || sessions[sessions.length - 1];
+  selectedSessionId = latestSession.id;
+  const profile = insightAgent.analyze(patient, sessions).domainProfile;
 
   container.innerHTML = `
     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
@@ -58,7 +64,7 @@ export function renderReportView(container) {
           </button>
           <button class="btn btn-primary" id="btn-print-report">
             ${icon('printer', 16)}
-            <span>공식 임상 기록지 인쇄</span>
+            <span>선택 회기 기록지 인쇄</span>
           </button>
         </div>
       </div>
@@ -77,6 +83,46 @@ export function renderReportView(container) {
 
         <div style="height: 280px; width: 100%;">
           <canvas id="clinical-trend-chart"></canvas>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.6rem; margin-top: 1rem;">
+          ${Object.entries(profile).map(([d, v]) => `
+            <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.6rem 0.8rem;">
+              <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">${esc(domainName(d))} (최근 3회기)</div>
+              <div style="font-size: 1.3rem; font-weight: 800; font-family: 'Outfit', sans-serif; color: ${v == null ? 'var(--text-muted)' : 'var(--text-primary)'};">${v == null ? '기록 없음' : v + '%'}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- 회기 이력 표 (선택 시 아래 분석·SOAP·인쇄 대상 변경) -->
+      <div class="card" style="padding: 1.25rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.8rem;">
+          <span class="icon-chip">${icon('calendar', 18)}</span>
+          <h3 style="font-size: 1.1rem;">회기 이력 <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">— 행을 눌러 회기를 선택하세요</span></h3>
+        </div>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+            <thead>
+              <tr style="background: var(--bg-subtle); color: var(--text-secondary); text-align: left;">
+                <th style="padding: 0.55rem 0.7rem;">회기</th><th style="padding: 0.55rem 0.7rem;">날짜</th><th style="padding: 0.55rem 0.7rem;">영역</th>
+                <th style="padding: 0.55rem 0.7rem;">난이도</th><th style="padding: 0.55rem 0.7rem;">정반응률</th><th style="padding: 0.55rem 0.7rem;">자발 산출</th>
+                <th style="padding: 0.55rem 0.7rem;">평균 단서</th><th style="padding: 0.55rem 0.7rem;">잠복기</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${sessions.map((s, i) => ({ s, i })).reverse().map(({ s, i }) => `
+                <tr class="session-row" data-id="${esc(s.id)}" style="cursor: pointer; border-bottom: 1px solid var(--border-light); ${s.id === latestSession.id ? 'background: var(--brand-primary-light); font-weight: 700;' : ''}">
+                  <td style="padding: 0.55rem 0.7rem;">${i + 1}</td>
+                  <td style="padding: 0.55rem 0.7rem;">${esc(s.date)}</td>
+                  <td style="padding: 0.55rem 0.7rem;">${esc(domainName(s.domain))}</td>
+                  <td style="padding: 0.55rem 0.7rem;">${esc(levelName(s.difficulty))}${s.endLevel && s.endLevel !== s.difficulty ? ' → ' + esc(levelName(s.endLevel)) : ''}</td>
+                  <td style="padding: 0.55rem 0.7rem;">${s.accuracy}%</td>
+                  <td style="padding: 0.55rem 0.7rem;">${s.independentRate != null ? s.independentRate + '%' : '-'}</td>
+                  <td style="padding: 0.55rem 0.7rem;">${s.avgCueLevel != null ? s.avgCueLevel : '-'}</td>
+                  <td style="padding: 0.55rem 0.7rem;">${sec(s.avgLatencyMs || 0)}초</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -123,7 +169,7 @@ export function renderReportView(container) {
               return `
                 <div>
                   <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.2rem;">
-                    <span style="color: ${info.color};">${info.label}</span>
+                    <span style="color: ${info.color}; font-weight: 700;">${info.label} <small style="color: var(--text-muted); font-weight: 500;">(${info.desc || ''})</small></span>
                     <span style="color: var(--text-muted);">${count}회 (${pct}%)</span>
                   </div>
                   <div style="width: 100%; height: 6px; background: var(--bg-subtle); border-radius: 9999px; overflow: hidden;">
@@ -193,6 +239,12 @@ export function renderReportView(container) {
   initTrendChart(container, sessions);
 
   // 2. 이벤트 바인딩
+  container.querySelectorAll('.session-row').forEach(row => {
+    row.onclick = () => {
+      selectedSessionId = row.getAttribute('data-id');
+      renderReportView(container);
+    };
+  });
   container.querySelector('#btn-export-csv').onclick = () => {
     const csvData = reportAgent.exportToCSV(sessions, patient);
     downloadFile(csvData, `${patient.name}_임상세션기록_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv;charset=utf-8');

@@ -621,6 +621,57 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--brand-primary);
 }
 
+/* 치료사 / 특수교사 원터치 신속 판정 버튼 */
+.btn-touch-eval {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--border-medium);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  text-align: left;
+}
+.btn-touch-eval:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.btn-touch-eval:active {
+  transform: translateY(1px);
+}
+.btn-touch-eval.touch-correct {
+  border-color: #10B981;
+  background: #F0FDF4;
+}
+.btn-touch-eval.touch-correct:hover {
+  background: #DCFCE7;
+}
+.btn-touch-eval.touch-cued {
+  border-color: #F59E0B;
+  background: #FFFBEB;
+}
+.btn-touch-eval.touch-cued:hover {
+  background: #FEF3C7;
+}
+.btn-touch-eval.touch-partial {
+  border-color: #0284C7;
+  background: #F0F9FF;
+}
+.btn-touch-eval.touch-partial:hover {
+  background: #E0F2FE;
+}
+.btn-touch-eval.touch-incorrect {
+  border-color: #EF4444;
+  background: #FEF2F2;
+}
+.btn-touch-eval.touch-incorrect:hover {
+  background: #FEE2E2;
+}
+
 /* ==========================================================================
    토스트 & 모달
    ========================================================================== */

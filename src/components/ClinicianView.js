@@ -7,7 +7,7 @@
 
 import { store } from '../store.js';
 import { icon } from '../utils/icons.js';
-import { DOMAINS, LEVELS, domainName, levelName, esc, sec } from '../utils/helpers.js';
+import { DOMAINS, LEVELS, domainName, levelName, esc, sec, toast, downloadFile } from '../utils/helpers.js';
 import { insightAgent } from '../agents/insightAgent.js';
 import { adaptiveAgent } from '../agents/adaptiveAgent.js';
 import { taskAgent } from '../agents/taskAgent.js';
@@ -28,6 +28,27 @@ export function renderClinicianView(container, onStartSession) {
   container.innerHTML = `
     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
       
+      <!-- 상단 현장 실사용 바: 로컬 보안 & 원클릭 백업/복원 -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem; background: var(--bg-surface); padding: 0.85rem 1.25rem; border-radius: var(--radius-lg); border: 1.5px solid var(--border-light); box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+          <span style="background: var(--brand-success-light); color: #065F46; border: 1px solid var(--brand-success-border); padding: 0.25rem 0.65rem; border-radius: var(--radius-full); font-size: 0.82rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem;">
+            <span>🔒 100% 로컬 보안 보장</span>
+          </span>
+          <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">
+            환자/학생 데이터가 외부 서버로 전송되지 않으며 치료사 기기 브라우저에만 안전하게 보관됩니다.
+          </span>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button class="btn btn-secondary" id="btn-quick-export-backup" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">
+            ${icon('download', 14)} <span>원클릭 백업 (JSON)</span>
+          </button>
+          <label class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.4rem 0.85rem; cursor: pointer; margin-bottom: 0;">
+            ${icon('upload', 14)} <span>백업 복원</span>
+            <input type="file" id="file-quick-import-backup" accept=".json" style="display: none;">
+          </label>
+        </div>
+      </div>
+
       <!-- 상단 인사이트 배너 (InsightAgent) -->
       ${renderInsightAlerts(insightReport.insights)}
 
@@ -85,14 +106,19 @@ export function renderClinicianView(container, onStartSession) {
         
         <!-- [좌측] 대상자 임상 프로필 및 치료 목표 관리 -->
         <div class="card" style="display: flex; flex-direction: column; gap: 1.25rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 0.8rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
             <div style="display: flex; align-items: center; gap: 0.6rem;">
               <span class="icon-chip">${icon('user', 18)}</span>
-              <h3 style="font-size: 1.15rem;">대상자 임상 프로필</h3>
+              <h3 style="font-size: 1.15rem;">대상자 프로필</h3>
             </div>
-            <button class="btn btn-secondary" id="btn-edit-patient-profile" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">
-              ${icon('edit', 14)} 수정
-            </button>
+            <div style="display: flex; gap: 0.4rem;">
+              <button class="btn btn-secondary" id="btn-add-new-patient" style="padding: 0.35rem 0.75rem; font-size: 0.85rem; background: var(--brand-primary-light); color: var(--brand-primary); font-weight: 700; border-color: var(--brand-primary);">
+                ${icon('plus', 14)} 신규 등록
+              </button>
+              <button class="btn btn-secondary" id="btn-edit-patient-profile" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">
+                ${icon('edit', 14)} 수정
+              </button>
+            </div>
           </div>
 
           <div style="display: flex; flex-direction: column; gap: 0.8rem;">
@@ -102,13 +128,13 @@ export function renderClinicianView(container, onStartSession) {
             </div>
 
             <div style="display: flex; justify-content: space-between; font-size: 0.95rem;">
-              <span style="color: var(--text-muted);">임상 진단명</span>
+              <span style="color: var(--text-muted);">진단명 / 교육 구분</span>
               <span style="text-align: right; font-weight: 600; max-width: 65%; color: var(--brand-primary);">${esc(patient.diagnosis)}</span>
             </div>
 
             <div style="display: flex; justify-content: space-between; font-size: 0.95rem;">
-              <span style="color: var(--text-muted);">발병일 (Onset)</span>
-              <span>${esc(patient.onsetDate)}</span>
+              <span style="color: var(--text-muted);">발병일 / 등록일</span>
+              <span>${esc(patient.onsetDate || patient.createdDate || '-')}</span>
             </div>
 
             <div style="display: flex; justify-content: space-between; font-size: 0.95rem;">
@@ -120,14 +146,14 @@ export function renderClinicianView(container, onStartSession) {
           <!-- LTG & STG 치료 목표 상자 -->
           <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem;">
             <div style="font-size: 0.85rem; font-weight: 700; color: var(--brand-primary); display: flex; align-items: center; gap: 0.4rem;">
-              ${icon('award', 16)} 장기 치료목표 (LTG)
+              ${icon('award', 16)} 장기 목표 (LTG · 학기/최종 도달 목표)
             </div>
             <p style="font-size: 0.9rem; color: var(--text-primary); line-height: 1.45;">
               ${esc(patient.goals?.ltg || '설정된 장기 목표가 없습니다.')}
             </p>
 
             <div style="font-size: 0.85rem; font-weight: 700; color: var(--brand-success); margin-top: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
-              ${icon('target', 16)} 단기 치료목표 (STG)
+              ${icon('target', 16)} 단기 목표 (STG · 회기 기준 80%)
             </div>
             <p style="font-size: 0.9rem; color: var(--text-primary); line-height: 1.45;">
               ${esc(patient.goals?.stg || '설정된 단기 목표가 없습니다.')}
@@ -136,7 +162,7 @@ export function renderClinicianView(container, onStartSession) {
 
           <!-- 임상 특이사항 메모 -->
           <div>
-            <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">임상 관찰 및 반응성 특이사항</span>
+            <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">임상/교육 관찰 및 반응성 특이사항</span>
             <div style="font-size: 0.85rem; color: var(--text-secondary); background: white; border: 1px dashed var(--border-medium); border-radius: var(--radius-md); padding: 0.75rem;">
               ${esc(patient.notes || '기록된 특이사항이 없습니다.')}
             </div>
@@ -310,62 +336,102 @@ function bindClinicianEvents(container, patient, onStartSession) {
     });
   };
 
-  // 4. 환자 프로필 수정 모달
+  // 4. 원클릭 백업 다운로드
+  container.querySelector('#btn-quick-export-backup').onclick = () => {
+    const jsonStr = store.exportBackupJSON();
+    downloadFile(jsonStr, `UniRehab_백업_${new Date().toISOString().split('T')[0]}.json`, 'application/json');
+    toast('데이터가 백업 파일(JSON)로 저장되었습니다.', 'success');
+  };
+
+  // 5. 백업 파일 복원
+  container.querySelector('#file-quick-import-backup').onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const ok = store.importBackupJSON(ev.target.result);
+      if (ok) {
+        toast('백업 데이터가 성공적으로 복원되었습니다.', 'success');
+      } else {
+        toast('백업 파일 형식이 올바르지 않습니다.', 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // 6. 환자/학생 신규 등록 모달
+  container.querySelector('#btn-add-new-patient').onclick = () => {
+    openEditProfileModal(null, true);
+  };
+
+  // 7. 환자 프로필 수정 모달
   container.querySelector('#btn-edit-patient-profile').onclick = () => {
-    openEditProfileModal(patient);
+    openEditProfileModal(patient, false);
   };
 }
 
-function openEditProfileModal(patient) {
+function openEditProfileModal(patient, isNew = false) {
+  const p = patient || {
+    name: '',
+    age: 60,
+    gender: '남성',
+    diagnosis: '언어재활 / 특수교육 훈련',
+    severity: '경도 (Mild)',
+    targetDomain: 'naming',
+    difficulty: 'level2',
+    goals: { ltg: '', stg: '' },
+    notes: ''
+  };
+
   const modalBox = document.getElementById('modal-container');
   modalBox.innerHTML = `
     <div class="modal-overlay show">
       <div class="modal" style="max-width: 520px;">
         <div class="modal-head">
           <div class="modal-title">
-            <span class="icon-chip">${icon('edit', 18)}</span>
-            <h3>대상자 프로필 및 치료 목표 수정</h3>
+            <span class="icon-chip">${icon(isNew ? 'plus' : 'edit', 18)}</span>
+            <h3>${isNew ? '신규 대상자 (학생·환자) 등록' : '대상자 프로필 및 목표 수정'}</h3>
           </div>
           <button class="btn-icon" id="btn-close-edit-modal">${icon('x', 18)}</button>
         </div>
         <div class="modal-body" style="display:flex; flex-direction:column; gap:1rem;">
           <div>
-            <label style="font-size:0.85rem; font-weight:700; color:var(--text-secondary);">환자명</label>
-            <input type="text" id="edit-pat-name" value="${esc(patient.name)}" style="width:100%; padding:0.6rem; border-radius:var(--radius-md); border:1.5px solid var(--border-medium); font-size:0.95rem;">
+            <label style="font-size:0.85rem; font-weight:700; color:var(--text-secondary);">이름 (성명)</label>
+            <input type="text" id="edit-pat-name" placeholder="예: 홍길동" value="${esc(p.name)}" style="width:100%; padding:0.6rem; border-radius:var(--radius-md); border:1.5px solid var(--border-medium); font-size:0.95rem;">
           </div>
           <div style="display:flex; gap:0.8rem;">
             <div style="flex:1;">
-              <label style="font-size:0.85rem; font-weight:700; color:var(--text-secondary);">연령</label>
-              <input type="number" id="edit-pat-age" value="${patient.age}" style="width:100%; padding:0.6rem; border-radius:var(--radius-md); border:1.5px solid var(--border-medium); font-size:0.95rem;">
+              <label style="font-size:0.85rem; font-weight:700; color:var(--text-secondary);">연령 (만 나이)</label>
+              <input type="number" id="edit-pat-age" value="${p.age}" style="width:100%; padding:0.6rem; border-radius:var(--radius-md); border:1.5px solid var(--border-medium); font-size:0.95rem;">
             </div>
             <div style="flex:1;">
               <label style="font-size:0.85rem; font-weight:700; color:var(--text-secondary);">성별</label>
               <select id="edit-pat-gender" style="width:100%; padding:0.6rem; border-radius:var(--radius-md); border:1.5px solid var(--border-medium); font-size:0.95rem; background:white;">
-                <option value="남성" ${patient.gender === '남성' ? 'selected' : ''}>남성</option>
-                <option value="여성" ${patient.gender === '여성' ? 'selected' : ''}>여성</option>
+                <option value="남성" ${p.gender === '남성' ? 'selected' : ''}>남성</option>
+                <option value="여성" ${p.gender === '여성' ? 'selected' : ''}>여성</option>
               </select>
             </div>
           </div>
           <div>
-            <label style="font-size:0.85rem; font-weight:700; color:var(--text-secondary);">진단명</label>
-            <input type="text" id="edit-pat-diagnosis" value="${esc(patient.diagnosis)}" style="width:100%; padding:0.6rem; border-radius:var(--radius-md); border:1.5px solid var(--border-medium); font-size:0.95rem;">
+            <label style="font-size:0.85rem; font-weight:700; color:var(--text-secondary);">진단명 / 교육 구분</label>
+            <input type="text" id="edit-pat-diagnosis" placeholder="예: 뇌졸중 후 실어증 / 성인전환기 언어발달" value="${esc(p.diagnosis)}" style="width:100%; padding:0.6rem; border-radius:var(--radius-md); border:1.5px solid var(--border-medium); font-size:0.95rem;">
           </div>
           <div>
-            <label style="font-size:0.85rem; font-weight:700; color:var(--text-secondary);">장기 치료목표 (LTG)</label>
-            <textarea id="edit-pat-ltg" rows="2" style="width:100%; padding:0.6rem; border-radius:var(--radius-md); border:1.5px solid var(--border-medium); font-size:0.9rem;">${esc(patient.goals?.ltg || '')}</textarea>
+            <label style="font-size:0.85rem; font-weight:700; color:var(--text-secondary);">장기 목표 (LTG)</label>
+            <textarea id="edit-pat-ltg" rows="2" placeholder="예: 일상생활 필수 어휘 80% 이상 자발적 산출" style="width:100%; padding:0.6rem; border-radius:var(--radius-md); border:1.5px solid var(--border-medium); font-size:0.9rem;">${esc(p.goals?.ltg || '')}</textarea>
           </div>
           <div>
-            <label style="font-size:0.85rem; font-weight:700; color:var(--text-secondary);">단기 치료목표 (STG)</label>
-            <textarea id="edit-pat-stg" rows="2" style="width:100%; padding:0.6rem; border-radius:var(--radius-md); border:1.5px solid var(--border-medium); font-size:0.9rem;">${esc(patient.goals?.stg || '')}</textarea>
+            <label style="font-size:0.85rem; font-weight:700; color:var(--text-secondary);">단기 목표 (STG)</label>
+            <textarea id="edit-pat-stg" rows="2" placeholder="예: 시각 자극 제시 시 3초 이내 목표 명사 인출률 80% 달성" style="width:100%; padding:0.6rem; border-radius:var(--radius-md); border:1.5px solid var(--border-medium); font-size:0.9rem;">${esc(p.goals?.stg || '')}</textarea>
           </div>
           <div>
-            <label style="font-size:0.85rem; font-weight:700; color:var(--text-secondary);">임상 특이사항</label>
-            <textarea id="edit-pat-notes" rows="2" style="width:100%; padding:0.6rem; border-radius:var(--radius-md); border:1.5px solid var(--border-medium); font-size:0.9rem;">${esc(patient.notes || '')}</textarea>
+            <label style="font-size:0.85rem; font-weight:700; color:var(--text-secondary);">임상/교육 관찰 특이사항</label>
+            <textarea id="edit-pat-notes" rows="2" placeholder="특이사항 및 단서 반응성 메모" style="width:100%; padding:0.6rem; border-radius:var(--radius-md); border:1.5px solid var(--border-medium); font-size:0.9rem;">${esc(p.notes || '')}</textarea>
           </div>
         </div>
         <div class="modal-foot">
           <button class="btn btn-secondary" id="btn-cancel-edit">취소</button>
-          <button class="btn btn-primary" id="btn-save-edit">저장하기</button>
+          <button class="btn btn-primary" id="btn-save-edit">${isNew ? '신규 등록 완료' : '저장하기'}</button>
         </div>
       </div>
     </div>
@@ -376,11 +442,20 @@ function openEditProfileModal(patient) {
   modalBox.querySelector('#btn-cancel-edit').onclick = close;
 
   modalBox.querySelector('#btn-save-edit').onclick = () => {
-    const updated = {
-      name: modalBox.querySelector('#edit-pat-name').value.trim() || patient.name,
-      age: parseInt(modalBox.querySelector('#edit-pat-age').value, 10) || patient.age,
+    const nameVal = modalBox.querySelector('#edit-pat-name').value.trim();
+    if (!nameVal) {
+      toast('이름을 입력해 주세요.', 'error');
+      return;
+    }
+
+    const payload = {
+      name: nameVal,
+      age: parseInt(modalBox.querySelector('#edit-pat-age').value, 10) || p.age,
       gender: modalBox.querySelector('#edit-pat-gender').value,
-      diagnosis: modalBox.querySelector('#edit-pat-diagnosis').value.trim() || patient.diagnosis,
+      diagnosis: modalBox.querySelector('#edit-pat-diagnosis').value.trim() || '미지정',
+      severity: p.severity || '경도 (Mild)',
+      targetDomain: p.targetDomain || 'naming',
+      difficulty: p.difficulty || 'level2',
       goals: {
         ltg: modalBox.querySelector('#edit-pat-ltg').value.trim(),
         stg: modalBox.querySelector('#edit-pat-stg').value.trim()
@@ -388,7 +463,13 @@ function openEditProfileModal(patient) {
       notes: modalBox.querySelector('#edit-pat-notes').value.trim()
     };
 
-    store.updatePatient(patient.id, updated);
+    if (isNew) {
+      store.addPatient(payload);
+      toast(`${nameVal} 님이 신규 대상자로 등록되었습니다.`, 'success');
+    } else {
+      store.updatePatient(patient.id, payload);
+      toast('프로필 정보가 수정되었습니다.', 'success');
+    }
     close();
   };
 }

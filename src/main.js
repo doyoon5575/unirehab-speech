@@ -9,6 +9,7 @@ import { renderPatientView } from './components/PatientView.js';
 import { renderReportView } from './components/ReportView.js';
 import { openExternalAccessModal } from './components/ExternalAccessModal.js';
 import { openSettingsModal } from './components/SettingsModal.js';
+import { speechAgent } from './agents/speechAgent.js';
 
 class App {
   constructor() {
@@ -31,6 +32,10 @@ class App {
     // 3. 스토어 구독 (환자 변경 등 이벤트 감지)
     store.subscribe((event) => {
       if (event === 'PATIENT_CHANGED' || event === 'PATIENTS_UPDATED') {
+        if (event === 'PATIENT_CHANGED' && this.currentView === 'patient') {
+          this.currentView = 'clinician';
+          this.sessionConfig = null;
+        }
         this.render();
       }
     });
@@ -38,6 +43,10 @@ class App {
 
   // 뷰 라우팅 내비게이션
   navigate(viewName, config = null) {
+    if (this.currentView === 'patient' && viewName !== 'patient') {
+      speechAgent.stopListening();
+      speechAgent.cancelSpeech();
+    }
     this.currentView = viewName;
     if (config) this.sessionConfig = config;
     this.render();

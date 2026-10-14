@@ -179,7 +179,22 @@ class Store {
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.SESSIONS)) {
-      localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(INITIAL_SESSIONS));
+      let migrated = null;
+      try {
+        const v1 = JSON.parse(localStorage.getItem('unirehab_sessions_v1') || 'null');
+        if (Array.isArray(v1) && v1.length) {
+          migrated = v1.map(s => ({
+            difficulty: 'level2',
+            endLevel: s.difficulty || 'level2',
+            adaptive: false,
+            levelChanges: [],
+            avgCueLevel: s.hintUsedCount != null ? Math.round((s.hintUsedCount / Math.max(1, s.totalTasks)) * 20) / 10 : null,
+            migratedFromV1: true,
+            ...s
+          }));
+        }
+      } catch { migrated = null; }
+      localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(migrated || INITIAL_SESSIONS));
     }
   }
 
