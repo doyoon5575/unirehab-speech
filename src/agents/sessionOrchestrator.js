@@ -107,7 +107,7 @@ export class SessionOrchestrator {
     });
 
     if (this.config.autoTts) {
-      speechAgent.speak(this.currentTask.question, this.config.speechRate);
+      speechAgent.speak(this.currentTask, this.config.speechRate);
     }
   }
 

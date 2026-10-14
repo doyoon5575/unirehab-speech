@@ -27,6 +27,7 @@ export class SpeechAgent {
     this.silenceTimer = null;
     this.callbacks = {};
     this.voice = null;
+    this.currentAudio = null;
     this.sttSupported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
     this.ttsSupported = 'speechSynthesis' in window;
 
@@ -38,8 +39,16 @@ export class SpeechAgent {
     if (!this.ttsSupported) return;
     const pick = () => {
       const voices = window.speechSynthesis.getVoices();
-      this.voice = voices.find(v => v.lang === 'ko-KR' && /google|yuna|heami|sunhi/i.test(v.name))
-        || voices.find(v => v.lang && v.lang.toLowerCase().startsWith('ko')) || null;
+      const ko = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('ko'));
+      // 1순위: Microsoft Natural/Online (스튜디오급 신경망 음성)
+      // 2순위: Google 한국어 온라인 음성
+      // 3순위: Apple Siri / Premium
+      // 4순위: 구형 Desktop 로봇 음성 배제한 일반 음성
+      this.voice = ko.find(v => /natural|online/i.test(v.name))
+        || ko.find(v => /google/i.test(v.name))
+        || ko.find(v => /siri|yuna/i.test(v.name))
+        || ko.find(v => !/desktop/i.test(v.name))
+        || ko[0] || null;
     };
     pick();
     window.speechSynthesis.addEventListener?.('voiceschanged', pick);
@@ -203,20 +212,87 @@ export class SpeechAgent {
     if (this.canvas && this.ctx) this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
-  speak(text, rate = 1.0, onEnd = null) {
+  /**
+   * 하이브리드 음성 재생:
+   * 1순위: 96개 문항 사전 생성된 최고급 인공신경망(Neural MP3) 즉시 재생
+   * 2순위: 동적 문장(피드백, 단서 등) 고품질 Natural 우선 Web Speech API 발화
+   */
+  speak(input, rate = 1.0, onEnd = null) {
+    this.cancelSpeech();
+
+    // 1. 하이브리드 우선 탐색 (96개 문항 스튜디오 신경망 오디오)
+    let audioPath = null;
+    if (typeof input === 'object' && input?.id) {
+      audioPath = `./audio/${input.id}.mp3`;
+    } else if (typeof input === 'string') {
+      const trimmed = input.trim();
+      if (trimmed === '그림을 보고 이름을 말씀해 보세요.') {
+        audioPath = './audio/naming-prompt.mp3';
+      }
+    }
+
+    if (audioPath) {
+      try {
+        const audio = new Audio(audioPath);
+        audio.playbackRate = Math.max(0.7, Math.min(1.3, rate));
+        this.currentAudio = audio;
+
+        audio.onended = () => {
+          this.currentAudio = null;
+          onEnd?.();
+        };
+
+        audio.onerror = () => {
+          // 오디오 로드 실패 시 Web Speech로 자동 안전 Fallback
+          this.currentAudio = null;
+          const fallbackText = typeof input === 'object' ? input.question : input;
+          this.speakWithSynthesis(fallbackText, rate, onEnd);
+        };
+
+        const playPromise = audio.play();
+        if (playPromise && playPromise.catch) {
+          playPromise.catch(() => {
+            // 브라우저 정책 등으로 play 거부 시 fallback
+            this.currentAudio = null;
+            const fallbackText = typeof input === 'object' ? input.question : input;
+            this.speakWithSynthesis(fallbackText, rate, onEnd);
+          });
+        }
+        return;
+      } catch (err) {
+        // Fallback
+      }
+    }
+
+    // 2. 동적 문장 발화 (피드백 안내, 힌트 등): Natural 보이스 튜닝된 음성합성
+    const textToSpeak = typeof input === 'object' ? (input.question || '') : String(input || '');
+    this.speakWithSynthesis(textToSpeak, rate, onEnd);
+  }
+
+  speakWithSynthesis(text, rate = 1.0, onEnd = null) {
     if (!this.ttsSupported || !text) { onEnd?.(); return; }
     window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text.replace(/\[ \? \]/g, '빈칸'));
+    const cleanText = text.replace(/\[\s*\?\s*\]/g, '빈칸').replace(/\[|\]/g, '');
+    const u = new SpeechSynthesisUtterance(cleanText);
     u.lang = 'ko-KR';
-    u.rate = Math.max(0.6, Math.min(1.4, rate));
-    u.pitch = 1.0;
+    u.rate = Math.max(0.7, Math.min(1.3, rate * 0.95)); // 차분한 언어재활 템포
+    u.pitch = 0.95; // 쇳소리 없는 부드러운 톤
     if (this.voice) u.voice = this.voice;
     if (onEnd) { u.onend = onEnd; u.onerror = onEnd; }
     window.speechSynthesis.speak(u);
   }
 
   cancelSpeech() {
-    if (this.ttsSupported) window.speechSynthesis.cancel();
+    if (this.currentAudio) {
+      try {
+        this.currentAudio.pause();
+        this.currentAudio.currentTime = 0;
+      } catch (e) {}
+      this.currentAudio = null;
+    }
+    if (this.ttsSupported) {
+      window.speechSynthesis.cancel();
+    }
   }
 }
 

@@ -234,7 +234,7 @@ export function renderPatientView(container, sessionConfig, onFinishToReport) {
 
     // 1. 문제 다시 읽기
     btnReadPrompt.onclick = () => {
-      speechAgent.speak(task.question, orch.config.speechRate);
+      speechAgent.speak(task, orch.config.speechRate);
     };
 
     const btnReveal = container.querySelector('#btn-reveal-text');
