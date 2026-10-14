@@ -179,13 +179,35 @@ export class EvalAgent {
       best = { status: 'INCORRECT', errorType: 'NO_RESPONSE', similarity: 0, rank: 0 };
       bestRaw = '(오답 / 무반응)';
     } else {
-      list.forEach(raw => {
-        const r = this.analyzeOne(raw, task);
-        if (!best || r.rank > best.rank || (r.rank === best.rank && r.similarity > best.similarity)) {
-          best = r;
-          bestRaw = raw;
+      // 1순위 실제 발화(primary utterance) 분석
+      const primaryRaw = (list[0] || '').trim();
+      const primaryResult = this.analyzeOne(primaryRaw, task);
+
+      if (mode === 'speech') {
+        // 음성인식 모드: 환자가 실제 발화한 1순위 인식 결과를 본채점의 절대적 기준으로 삼음
+        best = { ...primaryResult };
+        bestRaw = primaryRaw;
+
+        // 1순위 발화가 오답/착어/부분산출인 경우:
+        // 하위 대체 후보(2~5순위)에 정답이 있더라도 무분별한 100점 자동 정답 처리는 엄격 차단
+        if (primaryResult.status !== 'CORRECT' && list.length > 1) {
+          const matchingAlt = list.slice(1).find(alt => {
+            const res = this.analyzeOne(alt, task);
+            return res.status === 'CORRECT';
+          });
+
+          if (matchingAlt) {
+            // 발음 왜곡 또는 STT 인식 모호성 플래그 표시 (치료사 원터치 오버라이드 유도)
+            best.ambiguousStt = true;
+            best.altMatch = matchingAlt;
+            best.note = `1순위 인식: "${primaryRaw}" (후보군에 "${matchingAlt}" 감지됨)`;
+          }
         }
-      });
+      } else {
+        // 텍스트 직접 입력 / 선택지 모드
+        best = primaryResult;
+        bestRaw = primaryRaw;
+      }
     }
 
     const isCorrect = best.status !== 'INCORRECT';
@@ -204,6 +226,9 @@ export class EvalAgent {
       isCorrect,
       errorType: best.errorType,
       similarity: Math.round(best.similarity * 100) / 100,
+      ambiguousStt: !!best.ambiguousStt,
+      altMatch: best.altMatch || null,
+      note: best.note || null,
       cueLevel: effectiveCue,
       hintUsed: effectiveCue > 0,
       score,

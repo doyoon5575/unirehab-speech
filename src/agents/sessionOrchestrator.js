@@ -133,9 +133,10 @@ export class SessionOrchestrator {
     return cueInfo;
   }
 
-  // 발화 또는 텍스트/보기 답안 제출 처리
+  // 발화 또는 텍스트/보기 답안 제출 처리 (치료사 원터치 오버라이드 지원)
   submitAnswer(input, mode = 'speech') {
     if (this.state === 'EVALUATING' || this.state === 'FINISHED') return;
+    const isOverride = this.state === 'FEEDBACK';
     this.state = 'EVALUATING';
     speechAgent.stopListening();
     speechAgent.cancelSpeech();
@@ -157,14 +158,20 @@ export class SessionOrchestrator {
       this.levelChanges.push(adaptResult);
     }
 
-    this.results.push(evaluation);
+    if (isOverride && this.results.length > 0) {
+      // 치료사가 이전 AI 자동 판정을 원터치로 정정한 경우
+      this.results[this.results.length - 1] = evaluation;
+    } else {
+      this.results.push(evaluation);
+    }
     this.state = 'FEEDBACK';
 
     this.emit('EVALUATION_COMPLETED', {
       index: this.currentIndex,
       evaluation,
       adaptResult,
-      isLast: this.currentIndex + 1 >= this.config.targetCount
+      isLast: this.currentIndex + 1 >= this.config.targetCount,
+      isOverride
     });
 
     return evaluation;

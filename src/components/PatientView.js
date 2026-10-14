@@ -258,7 +258,10 @@ export function renderPatientView(container, sessionConfig, onFinishToReport) {
             statusLabel.innerHTML = `인식 중: <strong style="color:var(--brand-primary);">"${esc(transcript)}"</strong>`;
 
             if (isFinal) {
-              orch.submitAnswer(alternatives && alternatives.length ? alternatives : transcript, 'speech');
+              const clean = (transcript || '').trim();
+              const alts = Array.isArray(alternatives) ? alternatives.map(a => (a || '').trim()).filter(Boolean) : [];
+              const orderedAlts = [clean, ...alts.filter(a => a !== clean)];
+              orch.submitAnswer(orderedAlts.length ? orderedAlts : clean, 'speech');
             }
           },
           onError: (err, msg) => {
@@ -336,12 +339,14 @@ export function renderPatientView(container, sessionConfig, onFinishToReport) {
 
     bannerBox.innerHTML = `
       <div class="feedback-banner ${bannerClass}">
-        <div>
+        <div style="flex: 1;">
           <div style="font-size: 1.25rem; font-weight: 800;">${esc(evaluation.feedbackTitle)}</div>
           <div style="font-size: 0.95rem; margin-top: 0.2rem; opacity: 0.95;">${esc(evaluation.feedbackMsg)}</div>
-          <div style="font-size: 0.8rem; margin-top: 0.35rem; display: flex; gap: 0.8rem; font-weight: 600;">
-            <span>단서 점수: ${evaluation.score}점</span>
+          <div style="font-size: 0.82rem; margin-top: 0.35rem; display: flex; gap: 0.8rem; flex-wrap: wrap; font-weight: 600;">
+            <span>인식 발화: <strong style="color:var(--text-primary);">"${esc(evaluation.userResponse || '무응답')}"</strong></span>
+            <span>단서 점수: <strong>${evaluation.score}점</strong></span>
             <span>반응 잠복기: ${sec(evaluation.latencyMs)}초</span>
+            ${evaluation.ambiguousStt ? `<span style="color: #D97706; background: #FEF3C7; padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 700;">⚠️ STT 모호 (하단 버튼으로 즉시 정정 가능)</span>` : ''}
             ${adaptResult.action !== 'HOLD' ? `<span style="color: var(--brand-purple); font-weight: 800;">${adaptResult.reason}</span>` : ''}
           </div>
         </div>
