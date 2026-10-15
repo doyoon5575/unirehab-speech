@@ -709,25 +709,27 @@ h1, h2, h3, h4, h5, h6 {
   opacity: 1;
 }
 
-.modal-overlay {
+.modal-overlay,
+.modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(15, 23, 42, 0.55);
   backdrop-filter: blur(4px);
   z-index: 90;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  opacity: 0;
   transition: opacity 0.2s ease;
 }
 
-.modal-overlay.show {
+.modal-overlay.show,
+.modal-backdrop {
   opacity: 1;
 }
 
-.modal {
+.modal,
+.modal-card {
   background: var(--bg-surface);
   border-radius: var(--radius-xl);
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);

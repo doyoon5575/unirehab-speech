@@ -5,6 +5,7 @@
 // ==========================================================================
 
 import { toChosung, firstSyllable } from '../utils/helpers.js';
+export { toChosung, firstSyllable };
 
 export const CUE_HIERARCHY = [
   { level: 0, key: 'none',       label: '자발 산출',   short: '자발',  score: 100, icon: 'sparkles' },

@@ -11,6 +11,7 @@ import { DOMAINS, LEVELS, domainName, levelName, esc, sec, toast, downloadFile }
 import { insightAgent } from '../agents/insightAgent.js';
 import { adaptiveAgent } from '../agents/adaptiveAgent.js';
 import { taskAgent } from '../agents/taskAgent.js';
+import { openAITaskModal } from './AITaskModal.js';
 
 export function renderClinicianView(container, onStartSession) {
   const patient = store.getActivePatient();
@@ -28,24 +29,37 @@ export function renderClinicianView(container, onStartSession) {
   container.innerHTML = `
     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
       
-      <!-- 상단 현장 실사용 바: 로컬 보안 & 원클릭 백업/복원 -->
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem; background: var(--bg-surface); padding: 0.85rem 1.25rem; border-radius: var(--radius-lg); border: 1.5px solid var(--border-light); box-shadow: var(--shadow-sm);">
-        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
-          <span style="background: var(--brand-success-light); color: #065F46; border: 1px solid var(--brand-success-border); padding: 0.25rem 0.65rem; border-radius: var(--radius-full); font-size: 0.82rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem;">
-            <span>🔒 100% 로컬 보안 보장</span>
-          </span>
-          <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">
-            환자/학생 데이터가 외부 서버로 전송되지 않으며 치료사 기기 브라우저에만 안전하게 보관됩니다.
-          </span>
-        </div>
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
-          <button class="btn btn-secondary" id="btn-quick-export-backup" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">
-            ${icon('download', 14)} <span>원클릭 백업 (JSON)</span>
-          </button>
-          <label class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.4rem 0.85rem; cursor: pointer; margin-bottom: 0;">
-            ${icon('upload', 14)} <span>백업 복원</span>
-            <input type="file" id="file-quick-import-backup" accept=".json" style="display: none;">
-          </label>
+      <!-- 상단 현장 실사용 바: 데이터 보관 및 음성인식 고지 -->
+      <div style="display: flex; flex-direction: column; gap: 0.8rem; background: var(--bg-surface); padding: 1rem 1.25rem; border-radius: var(--radius-lg); border: 1.5px solid var(--border-light); box-shadow: var(--shadow-sm);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.8rem;">
+          <div style="display: flex; flex-direction: column; gap: 0.35rem; max-width: 820px;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 0.2rem 0.65rem; border-radius: var(--radius-full); font-size: 0.82rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem;">
+                <span>🔒 데이터 보관 및 음성인식 고지</span>
+              </span>
+              <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 700;">
+                환자 차트 및 회기 기록: 로컬 저장소 안전 보관 (외부 서버 미전송)
+              </span>
+            </div>
+            <p style="font-size: 0.82rem; color: var(--text-secondary); margin: 0; line-height: 1.45;">
+              • <strong>데이터 보관:</strong> 차트 및 회기 기록은 브라우저 저장소에 보관됩니다. 공용 기기 사용 시 작업 후 백업 파일(JSON)로 내보낸 뒤 데이터를 정리하세요.<br/>
+              • <strong>마이크 음성인식(STT) 주의:</strong> 자동 음성 채점 활성화 시 발화가 브라우저 제공사(Google/Apple/Microsoft) 음성 서버를 경유합니다. 민감한 환경에서는 <strong>[치료사 직접 채점 버튼]</strong>만 사용하시기 바랍니다.
+            </p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            ${(patients || []).some(p => p.isDemo === true) ? `
+              <button class="btn btn-secondary" id="btn-clear-demo-data" style="font-size: 0.82rem; padding: 0.4rem 0.85rem; border-color: #fca5a5; color: #b91c1c; background: #fff1f2; font-weight: 700;">
+                🗑️ 데모 샘플 데이터 일괄 삭제
+              </button>
+            ` : ''}
+            <button class="btn btn-secondary" id="btn-quick-export-backup" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">
+              ${icon('download', 14)} <span>원클릭 백업 (JSON)</span>
+            </button>
+            <label class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.4rem 0.85rem; cursor: pointer; margin-bottom: 0;">
+              ${icon('upload', 14)} <span>백업 복원</span>
+              <input type="file" id="file-quick-import-backup" accept=".json" style="display: none;">
+            </label>
+          </div>
         </div>
       </div>
 
@@ -247,11 +261,16 @@ export function renderClinicianView(container, onStartSession) {
             </div>
           </div>
 
-          <!-- 훈련 세션 개시 버튼 -->
-          <button class="btn btn-primary btn-large" id="btn-start-configured-session" style="margin-top: 0.5rem;">
-            ${icon('play', 20, 2.5)}
-            <span>선택된 설정으로 재활 세션 시작</span>
-          </button>
+          <!-- 훈련 세션 개시 및 AI 문항 생성 버튼 -->
+          <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary" id="btn-open-ai-generator" style="flex: 1; min-width: 220px; padding: 0.8rem; font-weight: 700; border-color: var(--brand-primary); color: var(--brand-primary); background: #f0f9ff;">
+              ✨ 치료계획 기반 AI 맞춤 문항 생성 (${store.getCustomTasks().length}건 보유)
+            </button>
+            <button class="btn btn-primary btn-large" id="btn-start-configured-session" style="flex: 1.2; min-width: 240px;">
+              ${icon('play', 20, 2.5)}
+              <span>선택된 설정으로 재활 세션 시작</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -349,15 +368,44 @@ function bindClinicianEvents(container, patient, onStartSession) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const ok = store.importBackupJSON(ev.target.result);
-      if (ok) {
-        toast('백업 데이터가 성공적으로 복원되었습니다.', 'success');
-      } else {
-        toast('백업 파일 형식이 올바르지 않습니다.', 'error');
+      try {
+        const ok = store.importBackupJSON(ev.target.result);
+        if (ok) {
+          toast('백업 데이터가 성공적으로 복원되었습니다.', 'success');
+          renderClinicianView(container, onStartSession);
+        }
+      } catch (err) {
+        alert(err.message || '백업 파일 형식이 올바르지 않습니다.');
       }
     };
     reader.readAsText(file);
   };
+
+  // 5-1. AI 맞춤 문항 생성 모달 열기
+  const btnAiGen = container.querySelector('#btn-open-ai-generator');
+  if (btnAiGen) {
+    btnAiGen.onclick = () => {
+      const modalContainer = document.getElementById('modal-container');
+      openAITaskModal(modalContainer, (customSessionConfig) => {
+        onStartSession(customSessionConfig);
+      });
+    };
+  }
+
+  // 5-2. 데모 데이터 일괄 삭제 버튼
+  const btnClearDemo = container.querySelector('#btn-clear-demo-data');
+  if (btnClearDemo) {
+    btnClearDemo.onclick = () => {
+      const confirmed = window.confirm(
+        '초기 샘플 데이터(김철수, 이영희, 박민우 및 관련 샘플 회기)를 모두 삭제하시겠습니까?\n직접 등록하신 실제 대상자 기록은 안전하게 유지됩니다.'
+      );
+      if (confirmed) {
+        store.clearDemoData();
+        toast('데모 샘플 데이터가 모두 삭제되었습니다.', 'info');
+        renderClinicianView(container, onStartSession);
+      }
+    };
+  }
 
   // 6. 환자/학생 신규 등록 모달
   container.querySelector('#btn-add-new-patient').onclick = () => {

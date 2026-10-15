@@ -10,12 +10,40 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), geolocation=(), microphone=(self)');
-  if (!['GET', 'HEAD'].includes(req.method)) {
-    res.writeHead(405, { Allow: 'GET, HEAD' }); res.end(); return;
-  }
   let pathname;
   try { pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname); }
   catch { res.writeHead(400); res.end(); return; }
+
+  if (req.method === 'POST' && pathname === '/api/generate-tasks') {
+    let bodyStr = '';
+    req.on('data', chunk => { bodyStr += chunk; });
+    req.on('end', async () => {
+      try {
+        const body = JSON.parse(bodyStr || '{}');
+        const apiModule = await import('./api/generate-tasks.js');
+        const fakeReq = { method: 'POST', body };
+        const fakeRes = {
+          status(code) {
+            this.statusCode = code;
+            return this;
+          },
+          json(data) {
+            res.writeHead(this.statusCode || 200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify(data));
+          }
+        };
+        await apiModule.default(fakeReq, fakeRes);
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (!['GET', 'HEAD'].includes(req.method)) {
+    res.writeHead(405, { Allow: 'GET, HEAD, POST' }); res.end(); return;
+  }
   if (pathname === '/') pathname = '/index.html';
   const allowed = publicFiles.has(pathname)
     || /^\/src\/[a-zA-Z0-9_/-]+\.js$/.test(pathname)
