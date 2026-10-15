@@ -13,51 +13,51 @@ export function renderHeader(container, currentView, onNavigate, onOpenExternalM
   container.innerHTML = `
     <div class="app-header">
       <div class="header-inner">
-        <!-- 브랜드 로고 및 타이틀 -->
+        <!-- 미니멀 브랜드 로고 및 타이틀 -->
         <div class="brand-logo-area" id="header-brand-logo">
           <div class="logo-badge">
-            ${icon('logo', 24, 2.2)}
+            ${icon('logo', 20, 2.2)}
           </div>
           <div class="brand-text">
-            <h1>유니원 리햅 <span style="font-size: 0.75rem; color: var(--brand-primary); font-weight: 700; background: var(--brand-primary-light); padding: 0.15rem 0.4rem; border-radius: 4px; margin-left: 0.3rem;">v2.0 Pro</span></h1>
-            <div class="brand-sub">Agentic AI 성인 언어재활 솔루션</div>
+            <h1>유니원 리햅 <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600; border: 1px solid var(--border-light); padding: 0.1rem 0.35rem; border-radius: 4px; margin-left: 0.35rem; letter-spacing: 0.04em;">PRO</span></h1>
+            <div class="brand-sub">성인 언어재활 솔루션</div>
           </div>
         </div>
 
         <!-- 중앙 메인 탭 내비게이션 -->
         <nav class="nav-tabs" aria-label="메인 메뉴">
           <button class="nav-tab-btn ${currentView === 'clinician' ? 'active' : ''}" data-view="clinician">
-            ${icon('dashboard', 17)}
+            ${icon('dashboard', 15)}
             <span>치료사 관리</span>
           </button>
           <button class="nav-tab-btn ${currentView === 'patient' ? 'active' : ''}" data-view="patient">
-            ${icon('play', 17)}
+            ${icon('play', 15)}
             <span>재활 훈련실</span>
           </button>
           <button class="nav-tab-btn ${currentView === 'report' ? 'active' : ''}" data-view="report">
-            ${icon('chart', 17)}
+            ${icon('chart', 15)}
             <span>임상 리포트</span>
           </button>
         </nav>
 
         <!-- 우측 활성 대상자 정보 및 유틸리티 도구 -->
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
           <!-- 활성 환자 칩 (클릭 시 환자 전환) -->
           <div class="patient-badge-card" id="btn-patient-quick-switch" title="대상자 전환">
-            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--brand-success);"></span>
-            <strong style="color: var(--text-primary);">${esc(patient.name)}</strong>
-            <span style="color: var(--text-muted); font-size: 0.8rem;">(${esc(patient.gender[0])}/${esc(patient.age)})</span>
-            ${icon('chevronDown', 14, 2.5)}
+            <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--brand-success);"></span>
+            <strong style="color: var(--text-primary); font-size: 0.85rem;">${esc(patient.name)}</strong>
+            <span style="color: var(--text-muted); font-size: 0.78rem;">(${esc(patient.gender[0])}/${esc(patient.age)})</span>
+            ${icon('chevronDown', 12, 2)}
           </div>
 
           <!-- 원격/외부 접속 가이드 버튼 -->
           <button class="btn-icon" id="btn-open-external" title="태블릿/외부 접속 (QR코드)">
-            ${icon('wifi', 18)}
+            ${icon('wifi', 16)}
           </button>
 
           <!-- 글자 크기 / 고대비 / 설정 모달 -->
           <button class="btn-icon" id="btn-open-settings" title="접근성 및 시스템 설정">
-            ${icon('settings', 18)}
+            ${icon('settings', 16)}
           </button>
         </div>
       </div>

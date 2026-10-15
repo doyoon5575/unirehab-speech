@@ -33,19 +33,19 @@ export function renderPatientView(container, sessionConfig, onFinishToReport) {
       <div class="training-container">
         <div class="patient-training-card">
           
-          <!-- 상단 진행률 & 난이도 뱃지 -->
+          <!-- 슬림 상단 진행바 및 문항 번호 -->
           <div style="width: 100%;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
-              <div style="display: flex; align-items: center; gap: 0.6rem;">
-                <span style="background: var(--brand-primary-light); color: var(--brand-primary); padding: 0.3rem 0.8rem; border-radius: var(--radius-full); font-weight: 800; font-size: 0.95rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-weight: 700; color: var(--brand-primary); font-size: 0.9rem;">
                   문제 ${index + 1} / ${total}
                 </span>
-                <span style="background: var(--bg-subtle); color: var(--text-secondary); border: 1px solid var(--border-light); padding: 0.25rem 0.7rem; border-radius: var(--radius-full); font-size: 0.85rem; font-weight: 600;">
-                  난이도: ${levelName(currentLevel)}
+                <span style="color: var(--text-muted); font-size: 0.8rem;">
+                  (${levelName(currentLevel)})
                 </span>
               </div>
-              <span style="font-weight: 800; color: var(--brand-primary); font-size: 1rem;">
-                ${progressPct}% 완료
+              <span style="font-weight: 600; color: var(--text-muted); font-size: 0.82rem;">
+                ${progressPct}%
               </span>
             </div>
             
@@ -54,81 +54,56 @@ export function renderPatientView(container, sessionConfig, onFinishToReport) {
             </div>
           </div>
 
-          <!-- 중앙 대형 시각 자극 (Visual Stimulus) -->
+          <!-- 중앙 시각 자극 (Visual Stimulus) -->
           <div class="stimulus-visual-box">
             <span>${task.visualPrompt || '🗣️'}</span>
           </div>
 
           <!-- 문제 안내 텍스트 및 발음 듣기 버튼 -->
-          <div style="max-width: 680px; width: 100%;">
+          <div style="max-width: 640px; width: 100%;">
             ${task.domain === 'auditory' ? `
-              <div id="auditory-hidden-note" style="font-size: 1.15rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.6rem;">
-                🎧 잘 듣고 답해 주세요. (청각 이해 과제는 글자가 가려져 있습니다)
+              <div id="auditory-hidden-note" style="font-size: 1rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                🎧 잘 듣고 답해 주세요. (청각 이해 과제)
               </div>` : ''}
             <h2 class="stimulus-prompt-text" id="prompt-text" style="${task.domain === 'auditory' ? 'display:none;' : ''}">
               ${esc(task.question).replace(/\n/g, '<br>')}
             </h2>
-            <button class="btn btn-secondary" id="btn-read-prompt" style="padding: 0.5rem 1.1rem; font-size: 0.9rem; margin-top: 0.3rem;">
-              ${icon('volume', 18)}
-              <span>문제 다시 듣기</span>
+            <div style="display: flex; justify-content: center; gap: 0.4rem; margin-top: 0.2rem;">
+              <button class="btn btn-ghost" id="btn-read-prompt" style="font-size: 0.85rem; padding: 0.35rem 0.8rem; color: var(--text-muted);">
+                ${icon('volume', 16)} <span>문제 다시 듣기</span>
+              </button>
+              ${task.domain === 'auditory' ? `
+                <button class="btn btn-ghost" id="btn-reveal-text" style="font-size: 0.85rem; padding: 0.35rem 0.8rem; color: var(--text-muted);">
+                  ${icon('type', 16)}<span>글자로 보기</span>
+                </button>` : ''}
+            </div>
+          </div>
+
+          <!-- 자율 발화 마이크 입력 영역 -->
+          <div class="mic-action-area">
+            <canvas id="audio-wave-canvas" class="audio-visualizer-canvas" width="200" height="26"></canvas>
+
+            <button class="mic-btn-circle" id="btn-mic-toggle" title="마이크 누르고 말씀하세요" aria-label="마이크 음성 입력">
+              ${icon('mic', 28, 2.2)}
             </button>
-            ${task.domain === 'auditory' ? `
-              <button class="btn btn-ghost" id="btn-reveal-text" style="padding: 0.5rem 1.1rem; font-size: 0.9rem; margin-top: 0.3rem;">
-                ${icon('type', 18)}<span>글자로 보기</span>
-              </button>` : ''}
-          </div>
 
-          <!-- [치료사 / 특수교사용] 태블릿 원클릭 신속 판정 패널 -->
-          <div class="clinician-touch-eval-card" style="width: 100%; max-width: 680px; background: var(--bg-subtle); border: 1.5px solid var(--border-medium); border-radius: var(--radius-lg); padding: 1rem 1.25rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
-              <div style="display: flex; align-items: center; gap: 0.4rem; font-weight: 800; color: var(--text-primary); font-size: 0.95rem;">
-                <span class="icon-chip" style="width:24px;height:24px;font-size:0.8rem;">👩‍⚕️</span>
-                <span>치료사·교사 원클릭 판정 (터치 즉시 채점)</span>
-              </div>
-              <div style="font-size: 0.82rem; font-weight: 700; color: var(--brand-primary); background: var(--brand-primary-light); padding: 0.2rem 0.6rem; border-radius: var(--radius-full);">
-                현재 단서: <span id="lbl-active-cue-name">${CUE_HIERARCHY[cueLevel]?.label || '자발 산출'}</span> (<span id="lbl-active-cue-score">${CUE_HIERARCHY[cueLevel]?.score || 100}</span>점)
-              </div>
+            <div id="mic-status-label" style="font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); min-height: 1.3rem;">
+              마이크를 누르고 말씀해 주세요
             </div>
 
-            <div class="touch-eval-btn-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.6rem;">
-              <button class="btn-touch-eval touch-correct" id="btn-touch-spontaneous" type="button" title="힌트 없이 스스로 성공">
-                <span style="font-size: 1.25rem;">🟢</span>
-                <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                  <strong style="font-size: 0.92rem;">정답 (자발)</strong>
-                  <span style="font-size: 0.75rem; opacity: 0.85;">100점 · 무단서</span>
-                </div>
-              </button>
-
-              <button class="btn-touch-eval touch-cued" id="btn-touch-cued" type="button" title="단서 확인 후 정답 발화">
-                <span style="font-size: 1.25rem;">💡</span>
-                <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                  <strong style="font-size: 0.92rem;">단서 후 정답</strong>
-                  <span style="font-size: 0.75rem; opacity: 0.85;" id="lbl-touch-cued-pts">${cueLevel > 0 ? `${CUE_HIERARCHY[cueLevel]?.score}점 · ${CUE_HIERARCHY[cueLevel]?.short}` : '85점 · 1단계'}</span>
-                </div>
-              </button>
-
-              <button class="btn-touch-eval touch-partial" id="btn-touch-partial" type="button" title="근접 발음 또는 핵심어 산출">
-                <span style="font-size: 1.25rem;">🔵</span>
-                <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                  <strong style="font-size: 0.92rem;">부분 산출</strong>
-                  <span style="font-size: 0.75rem; opacity: 0.85;">70% 인정</span>
-                </div>
-              </button>
-
-              <button class="btn-touch-eval touch-incorrect" id="btn-touch-incorrect" type="button" title="오답 또는 무반응">
-                <span style="font-size: 1.25rem;">🔴</span>
-                <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                  <strong style="font-size: 0.92rem;">오답 / 무반응</strong>
-                  <span style="font-size: 0.75rem; opacity: 0.85;">0점</span>
-                </div>
+            <!-- 직접 텍스트 입력 보조 (필요 시) -->
+            <div style="display: flex; gap: 0.4rem; width: 100%; max-width: 380px;">
+              <input type="text" id="input-response-text" placeholder="음성 결과 또는 직접 입력" style="flex: 1; padding: 0.5rem 0.8rem; border-radius: var(--radius-md); border: 1px solid var(--border-light); font-size: 0.9rem; text-align: center; color: var(--text-primary);">
+              <button class="btn btn-secondary" id="btn-submit-text" style="padding: 0.5rem 0.9rem; font-size: 0.85rem;">
+                입력
               </button>
             </div>
           </div>
 
-          <!-- 단서 위계(Cueing Hierarchy) 제어 영역 -->
-          <div style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0.8rem;">
+          <!-- 단서 위계(Cue) 영역 - 조용하고 차분하게 배치 -->
+          <div style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0.6rem; margin-top: 0.5rem;">
             <div class="cue-hierarchy-strip">
-              <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-right: 0.3rem;">단서 위계:</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted); margin-right: 0.2rem;">단서:</span>
               ${CUE_HIERARCHY.map(c => `
                 <span class="cue-step-chip ${cueLevel === c.level ? 'active' : ''}">
                   ${c.short}
@@ -137,17 +112,17 @@ export function renderPatientView(container, sessionConfig, onFinishToReport) {
             </div>
 
             <!-- 단서 요청 버튼 -->
-            <button class="btn btn-secondary" id="btn-request-cue" style="padding: 0.6rem 1.2rem; border-color: var(--brand-warning); color: var(--brand-warning); background: var(--brand-warning-light); font-weight: 700;">
-              ${icon('bulb', 18)}
-              <span>다음 단계 단서(힌트) 제시하기 (현재 ${cueLevel}단계: ${CUE_HIERARCHY[cueLevel]?.short || '자발'})</span>
+            <button class="btn btn-secondary" id="btn-request-cue" style="padding: 0.45rem 1rem; font-size: 0.85rem; color: var(--brand-warning); border-color: var(--brand-warning-border); background: var(--brand-warning-light);">
+              ${icon('bulb', 16)}
+              <span>단서(힌트) 제시 (${cueLevel}단계: ${CUE_HIERARCHY[cueLevel]?.short || '자발'})</span>
             </button>
 
-            <!-- 단서 안내 박스 (요청 시 표시) -->
-            <div id="cue-display-box" style="display: none; width: 100%; max-width: 540px; padding: 1rem 1.25rem; border-radius: var(--radius-md); background: var(--brand-warning-light); border: 1.5px solid var(--brand-warning-border); color: #92400E; font-weight: 700; font-size: 1.1rem;">
+            <!-- 단서 안내 박스 -->
+            <div id="cue-display-box" style="display: none; width: 100%; max-width: 500px; padding: 0.75rem 1rem; border-radius: var(--radius-md); background: var(--brand-warning-light); border: 1px solid var(--brand-warning-border); color: #B45309; font-weight: 600; font-size: 0.95rem;">
             </div>
 
-            <!-- 보기 선택 버튼군 (단서 5단계 이상 또는 보기 선택 모드 시 표시) -->
-            <div id="choice-options-container" class="option-btn-grid" style="display: ${cueLevel >= 5 ? 'grid' : 'none'}; margin-top: 0.5rem;">
+            <!-- 보기 선택 버튼군 (단서 5단계 이상 시) -->
+            <div id="choice-options-container" class="option-btn-grid" style="display: ${cueLevel >= 5 ? 'grid' : 'none'}; margin-top: 0.4rem;">
               ${options.map(opt => `
                 <button class="option-select-btn" data-val="${esc(opt)}">
                   ${esc(opt)}
@@ -156,27 +131,48 @@ export function renderPatientView(container, sessionConfig, onFinishToReport) {
             </div>
           </div>
 
-          <!-- 보조: 마이크 음성 인식 및 직접 텍스트 입력 영역 -->
-          <div class="mic-action-area" style="border-top: 1px dashed var(--border-light); padding-top: 1.2rem;">
-            <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-bottom: -0.3rem;">
-              보조 음성인식 (환자 자율 발화용)
+          <!-- 치료사 신속 판정 하단 바 (환자 시야를 방해하지 않는 깔끔한 임상 제어 툴바) -->
+          <div class="clinician-touch-eval-card" style="width: 100%; max-width: 640px; background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-top: 0.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.3rem;">
+              <span style="font-weight: 600; color: var(--text-secondary); font-size: 0.8rem;">
+                치료사 원클릭 판정 (터치 즉시 채점)
+              </span>
+              <span style="font-size: 0.78rem; color: var(--text-muted);">
+                <span id="lbl-active-cue-name">${CUE_HIERARCHY[cueLevel]?.label || '자발 산출'}</span> (<span id="lbl-active-cue-score">${CUE_HIERARCHY[cueLevel]?.score || 100}</span>점)
+              </span>
             </div>
 
-            <canvas id="audio-wave-canvas" class="audio-visualizer-canvas" width="240" height="36"></canvas>
+            <div class="touch-eval-btn-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.45rem;">
+              <button class="btn-touch-eval touch-correct" id="btn-touch-spontaneous" type="button" title="힌트 없이 스스로 성공">
+                <span style="font-size: 1rem;">🟢</span>
+                <div>
+                  <strong style="font-size: 0.82rem; display: block;">자발 정답</strong>
+                  <span style="font-size: 0.7rem; color: var(--text-muted);">100점</span>
+                </div>
+              </button>
 
-            <button class="mic-btn-circle" id="btn-mic-toggle" title="마이크 누르고 말씀하세요" aria-label="마이크 음성 입력" style="width: 72px; height: 72px;">
-              ${icon('mic', 32, 2.5)}
-            </button>
+              <button class="btn-touch-eval touch-cued" id="btn-touch-cued" type="button" title="단서 확인 후 정답 발화">
+                <span style="font-size: 1rem;">💡</span>
+                <div>
+                  <strong style="font-size: 0.82rem; display: block;">단서 정답</strong>
+                  <span style="font-size: 0.7rem; color: var(--text-muted);" id="lbl-touch-cued-pts">${cueLevel > 0 ? `${CUE_HIERARCHY[cueLevel]?.score}점` : '85점'}</span>
+                </div>
+              </button>
 
-            <div id="mic-status-label" style="font-size: 0.95rem; font-weight: 700; color: var(--text-secondary); min-height: 1.4rem;">
-              마이크 버튼을 누르고 말씀하시거나, 위 빠른 채점 버튼을 누르세요 🎙️
-            </div>
+              <button class="btn-touch-eval touch-partial" id="btn-touch-partial" type="button" title="근접 발음 또는 핵심어 산출">
+                <span style="font-size: 1rem;">🔵</span>
+                <div>
+                  <strong style="font-size: 0.82rem; display: block;">부분 산출</strong>
+                  <span style="font-size: 0.7rem; color: var(--text-muted);">70%</span>
+                </div>
+              </button>
 
-            <!-- 직접 텍스트 입력 보조창 -->
-            <div style="display: flex; gap: 0.5rem; width: 100%; max-width: 440px;">
-              <input type="text" id="input-response-text" placeholder="음성인식 결과 또는 텍스트 입력" style="flex: 1; padding: 0.65rem 0.9rem; border-radius: var(--radius-md); border: 1.5px solid var(--border-medium); font-size: 1rem; text-align: center; color: var(--text-primary); font-weight: 600;">
-              <button class="btn btn-secondary" id="btn-submit-text" style="padding: 0.65rem 1.1rem; font-size: 0.95rem;">
-                입력 제출
+              <button class="btn-touch-eval touch-incorrect" id="btn-touch-incorrect" type="button" title="오답 또는 무반응">
+                <span style="font-size: 1rem;">🔴</span>
+                <div>
+                  <strong style="font-size: 0.82rem; display: block;">오답/무반응</strong>
+                  <span style="font-size: 0.7rem; color: var(--text-muted);">0점</span>
+                </div>
               </button>
             </div>
           </div>

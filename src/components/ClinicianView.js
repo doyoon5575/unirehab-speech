@@ -30,36 +30,27 @@ export function renderClinicianView(container, onStartSession) {
     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
       
       <!-- 상단 현장 실사용 바: 데이터 보관 및 음성인식 고지 -->
-      <div style="display: flex; flex-direction: column; gap: 0.8rem; background: var(--bg-surface); padding: 1rem 1.25rem; border-radius: var(--radius-lg); border: 1.5px solid var(--border-light); box-shadow: var(--shadow-sm);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.8rem;">
-          <div style="display: flex; flex-direction: column; gap: 0.35rem; max-width: 820px;">
-            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-              <span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 0.2rem 0.65rem; border-radius: var(--radius-full); font-size: 0.82rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem;">
-                <span>🔒 데이터 보관 및 음성인식 고지</span>
-              </span>
-              <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 700;">
-                환자 차트 및 회기 기록: 로컬 저장소 안전 보관 (외부 서버 미전송)
-              </span>
-            </div>
-            <p style="font-size: 0.82rem; color: var(--text-secondary); margin: 0; line-height: 1.45;">
-              • <strong>데이터 보관:</strong> 차트 및 회기 기록은 브라우저 저장소에 보관됩니다. 공용 기기 사용 시 작업 후 백업 파일(JSON)로 내보낸 뒤 데이터를 정리하세요.<br/>
-              • <strong>마이크 음성인식(STT) 주의:</strong> 자동 음성 채점 활성화 시 발화가 브라우저 제공사(Google/Apple/Microsoft) 음성 서버를 경유합니다. 민감한 환경에서는 <strong>[치료사 직접 채점 버튼]</strong>만 사용하시기 바랍니다.
-            </p>
-          </div>
-          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-            ${(patients || []).some(p => p.isDemo === true) ? `
-              <button class="btn btn-secondary" id="btn-clear-demo-data" style="font-size: 0.82rem; padding: 0.4rem 0.85rem; border-color: #fca5a5; color: #b91c1c; background: #fff1f2; font-weight: 700;">
-                🗑️ 데모 샘플 데이터 일괄 삭제
-              </button>
-            ` : ''}
-            <button class="btn btn-secondary" id="btn-quick-export-backup" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">
-              ${icon('download', 14)} <span>원클릭 백업 (JSON)</span>
+      <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface); padding: 0.75rem 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-light); flex-wrap: wrap; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.82rem; color: var(--text-secondary);">
+          <span style="color: var(--brand-primary); font-weight: 700; display: inline-flex; align-items: center; gap: 0.25rem;">
+            🔒 로컬 보안 저장
+          </span>
+          <span style="color: var(--border-medium);">|</span>
+          <span>환자 차트 및 회기 기록은 브라우저에 안전하게 보관됩니다. (마이크 사용 시 STT 음성 서버 경유)</span>
+        </div>
+        <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+          ${(patients || []).some(p => p.isDemo === true) ? `
+            <button class="btn btn-secondary" id="btn-clear-demo-data" style="font-size: 0.78rem; padding: 0.3rem 0.65rem; color: var(--brand-danger); border-color: var(--brand-danger-border);">
+              데모 삭제
             </button>
-            <label class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.4rem 0.85rem; cursor: pointer; margin-bottom: 0;">
-              ${icon('upload', 14)} <span>백업 복원</span>
-              <input type="file" id="file-quick-import-backup" accept=".json" style="display: none;">
-            </label>
-          </div>
+          ` : ''}
+          <button class="btn btn-secondary" id="btn-quick-export-backup" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
+            ${icon('download', 13)} <span>백업 내보내기</span>
+          </button>
+          <label class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; cursor: pointer; margin-bottom: 0;">
+            ${icon('upload', 13)} <span>백업 복원</span>
+            <input type="file" id="file-quick-import-backup" accept=".json" style="display: none;">
+          </label>
         </div>
       </div>
 
@@ -293,16 +284,16 @@ function renderInsightAlerts(insights) {
   }[topInsight.level] || { bg: 'var(--bg-subtle)', border: 'var(--border-light)', text: '#334155', ico: 'info' };
 
   return `
-    <div style="background: ${colors.bg}; border: 1.5px solid ${colors.border}; border-radius: var(--radius-lg); padding: 1rem 1.4rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; box-shadow: var(--shadow-sm);">
-      <div style="display: flex; align-items: center; gap: 0.8rem;">
-        <span style="color: ${colors.text}; display: flex; align-items: center;">${icon(colors.ico, 20)}</span>
+    <div style="background: ${colors.bg}; border: 1px solid ${colors.border}; border-radius: var(--radius-md); padding: 0.85rem 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 0.8rem;">
+      <div style="display: flex; align-items: center; gap: 0.65rem;">
+        <span style="color: ${colors.text}; display: flex; align-items: center;">${icon(colors.ico, 18)}</span>
         <div>
-          <strong style="color: ${colors.text}; font-size: 0.95rem;">AI 임상 브리핑: ${esc(topInsight.title)}</strong>
-          <p style="font-size: 0.85rem; color: ${colors.text}; opacity: 0.95; margin-top: 0.1rem;">${esc(topInsight.body)}</p>
+          <strong style="color: ${colors.text}; font-size: 0.9rem;">AI 브리핑: ${esc(topInsight.title)}</strong>
+          <p style="font-size: 0.82rem; color: ${colors.text}; opacity: 0.9; margin-top: 0.1rem;">${esc(topInsight.body)}</p>
         </div>
       </div>
-      <span style="font-size: 0.75rem; font-weight: 700; color: ${colors.text}; background: rgba(255,255,255,0.6); padding: 0.25rem 0.6rem; border-radius: 9999px; white-space: nowrap;">
-        InsightAgent
+      <span style="font-size: 0.72rem; font-weight: 600; color: ${colors.text}; background: rgba(255,255,255,0.5); padding: 0.2rem 0.5rem; border-radius: 4px; white-space: nowrap;">
+        AI 분석
       </span>
     </div>
   `;

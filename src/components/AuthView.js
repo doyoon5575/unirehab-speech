@@ -12,15 +12,12 @@ export function renderAuthView(container, onAuthenticated) {
     const isCloudConfigured = store.isCloudConfigured();
 
     container.innerHTML = `
-      <div class="auth-wrapper" style="max-width: 480px; margin: 3rem auto; padding: 2.25rem; background: #fff; border-radius: 16px; border: 1.5px solid var(--border-light, #e2e8f0); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.06);">
+      <div class="auth-wrapper" style="max-width: 440px; margin: 3rem auto; padding: 2rem; background: #fff; border-radius: var(--radius-lg); border: 1px solid var(--border-light); box-shadow: var(--shadow-card);">
         
         <div style="text-align: center; margin-bottom: 1.5rem;">
-          <span style="display: inline-block; padding: 0.25rem 0.85rem; background: #e0f2fe; color: #0369a1; border-radius: 999px; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.6rem;">
-            UniRehab Speech v2.0 Cloud
-          </span>
-          <h1 style="margin: 0; font-size: 1.5rem; color: #0f172a; font-weight: 800;">치료사 전용 임상 워크스페이스</h1>
-          <p style="margin: 0.45rem 0 0 0; font-size: 0.88rem; color: #64748b; line-height: 1.4;">
-            담당 환자 보호(RLS 암호화) 및 오프라인-온라인 자동 동기화 지원
+          <h1 style="margin: 0; font-size: 1.35rem; color: var(--text-primary); font-weight: 700;">치료사 워크스페이스</h1>
+          <p style="margin: 0.35rem 0 0 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;">
+            담당 환자 데이터 보호 및 로컬-클라우드 하이브리드 동기화
           </p>
         </div>
 

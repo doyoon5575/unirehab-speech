@@ -36,15 +36,15 @@ export function openAITaskModal(modalContainer, onStartSessionWithTasks = null) 
   function render() {
     modalContainer.innerHTML = `
       <div class="modal-backdrop" id="ai-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="ai-modal-title">
-        <div class="modal-card modal-card--wide" style="max-width: 860px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; background: #fff; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); overflow: hidden;">
+        <div class="modal-card modal-card--wide" style="max-width: 820px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); border: 1px solid var(--border-light); overflow: hidden;">
           
           <!-- 모달 헤더 -->
-          <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color, #e2e8f0); background: #f8fafc;">
+          <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--border-light); background: var(--bg-surface);">
             <div>
-              <span class="badge badge--primary" style="font-size: 0.75rem; margin-bottom: 0.25rem; display: inline-block; background: #e0f2fe; color: #0369a1; padding: 0.2rem 0.6rem; border-radius: 999px; font-weight: 700;">Agentic AI 문항 설계</span>
-              <h2 id="ai-modal-title" style="margin: 0; font-size: 1.25rem; color: #0f172a; font-weight: 700;">치료계획 기반 AI 맞춤형 과제 생성기</h2>
+              <h2 id="ai-modal-title" style="margin: 0; font-size: 1.15rem; color: var(--text-primary); font-weight: 700;">AI 맞춤 문항 생성</h2>
+              <p style="margin: 0.2rem 0 0 0; font-size: 0.8rem; color: var(--text-muted);">치료 목표에 맞춘 과제를 실시간으로 생성하고 검수합니다.</p>
             </div>
-            <button type="button" id="btn-close-ai-modal" class="btn btn--ghost" aria-label="닫기" style="font-size: 1.25rem; background: transparent; border: none; cursor: pointer; color: #64748b; padding: 0.5rem;">✕</button>
+            <button type="button" id="btn-close-ai-modal" class="btn-icon" aria-label="닫기" style="font-size: 1.1rem; border: none;">✕</button>
           </div>
 
           <!-- 모달 본문 (스크롤 영역) -->
