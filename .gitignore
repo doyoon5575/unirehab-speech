@@ -3,6 +3,8 @@ node_modules/
 *.log
 *.tmp
 *.gdoc
+*.zip
+*.pdf
 .DS_Store
 Thumbs.db
 

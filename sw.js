@@ -1,4 +1,4 @@
-const CACHE_NAME = 'unirehab-public-v3';
+const CACHE_NAME = 'unirehab-public-v5';
 // Never cache authentication, API traffic, reports, or patient records.
 function isPublicAsset(request) {
   const url = new URL(request.url);
@@ -8,6 +8,7 @@ function isPublicAsset(request) {
     || /^\/audio\/[a-zA-Z0-9_-]+\.mp3$/.test(url.pathname);
 }
 self.addEventListener('install', event => {
+  self.skipWaiting();
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(['/', '/index.html', '/index.css', '/manifest.json'])));
 });
 self.addEventListener('activate', event => {

@@ -253,13 +253,13 @@ export function renderClinicianView(container, onStartSession) {
           </div>
 
           <!-- 훈련 세션 개시 및 AI 문항 생성 버튼 -->
-          <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem; flex-wrap: wrap;">
-            <button type="button" class="btn btn-secondary" id="btn-open-ai-generator" style="flex: 1; min-width: 220px; padding: 0.8rem; font-weight: 700; border-color: var(--brand-primary); color: var(--brand-primary); background: #f0f9ff;">
+          <div style="display: flex; gap: 0.85rem; margin-top: 0.6rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary btn-pill" id="btn-open-ai-generator" style="flex: 1; min-width: 220px; padding: 0.85rem 1.4rem; font-weight: 700; border-color: rgba(31, 79, 224, 0.25); color: var(--color-accent); background: var(--color-tint);">
               ✨ 치료계획 기반 AI 맞춤 문항 생성 (${store.getCustomTasks().length}건 보유)
             </button>
-            <button class="btn btn-primary btn-large" id="btn-start-configured-session" style="flex: 1.2; min-width: 240px;">
+            <button class="btn btn-primary btn-pill shadow-glow" id="btn-start-configured-session" style="flex: 1.2; min-width: 240px; padding: 0.85rem 1.6rem; font-size: 1.05rem;">
               ${icon('play', 20, 2.5)}
-              <span>선택된 설정으로 재활 세션 시작</span>
+              <span>오늘의 재활 훈련 시작하기</span>
             </button>
           </div>
         </div>
